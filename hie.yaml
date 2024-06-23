@@ -1,0 +1,16 @@
+cradle:
+  multi:
+    # - path: "ignore/"
+    #   config: {cradle: {none: }}
+
+    - path: "src"
+      config: {cradle: {cabal: {component: "lib:hpci"}}}
+
+    - path: "app"
+      config: {cradle: {cabal: {component: "hpci:hpci-exe"}}}
+
+    - path: "test"
+      config: {cradle: {cabal: {component: "hpci:hpci-test"}}}
+
+    - path: "bench"
+      config: {cradle: {cabal: {component: "hpci:hpci-bench"}}}
