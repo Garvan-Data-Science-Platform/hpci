@@ -58,7 +58,7 @@ jobs:
             ~/.cabal
             dist-newstyle
           key: cabal-cache-${{ matrix.os }}-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal') }}
-      - run: sudo apt-get install -y libssh2-dev
+      - run: sudo apt-get install -y libssh2
       - run: cabal new-build --only-dependencies
       - run: cabal new-build
       - run: cabal new-test --test-show-details=direct
