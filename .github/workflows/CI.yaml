@@ -85,9 +85,10 @@ jobs:
   push:
     name: Push to GCP Artifact Registry
     steps:
-      - run: gcloud artifacts generic upload \
-          --location=australia-southeast1 \
-          --source=./result/bin/hpci-exe \
-          --package=hpci \
-          --version=0.0.1 \
-          --repository=generic
+      - run: |
+          gcloud artifacts generic upload \
+            --location=australia-southeast1 \
+            --source=./result/bin/hpci-exe \
+            --package=hpci \
+            --version=0.0.1 \
+            --repository=generic
