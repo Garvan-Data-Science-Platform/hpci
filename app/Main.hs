@@ -39,14 +39,11 @@ pollUntilFinished s jid = do
 -- TODO: add parser for a config file; and for parsing job id; parse status of job
 -- TODO: explore Reader monad to replace global variables and thread config through code
 
-runHpci :: String -> String -> Int -> String -> FilePath -> FilePath -> FilePath -> FilePath -> FilePath -> IO ()
-runHpci user host port command knownHost public private script logFile = do
+runHpci :: String -> String -> Int -> String -> FilePath -> FilePath -> FilePath -> FilePath -> IO ()
+runHpci user host port command public private script logFile = do
   --  Initialize session
   session <- sessionInit host port
   putStrLn "Start Session"
-
-  -- Check remote host against known hosts list
-  _ <- checkHost session host port knownHost [TYPE_MASK]
 
   -- Authenticate
   publicKeyAuthFile session user public private ""
@@ -91,5 +88,5 @@ main :: IO()
 main = do
   args <- getArgs
   case args of
-    [user, host, port, cmd, knownHost, public, private, script, logFile] -> runHpci user host (read port) cmd knownHost public private script logFile
-    _ -> putStrLn "required args: username hostname port cmd knownHosts publickey privatekey script logFile"
+    [user, host, port, cmd, public, private, script, logFile] -> runHpci user host (read port) cmd public private script logFile
+    _ -> putStrLn "required args: username hostname port cmd publickey privatekey script logFile"
