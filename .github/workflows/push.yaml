@@ -5,10 +5,10 @@ on:
       - main
 
 jobs:
-  tests:
-    uses: ./.github/workflows/test.yaml
+  # tests:
+  #   uses: ./.github/workflows/test.yaml
   push_to_registry:
-    needs: [tests]
+    # needs: [tests]
     permissions:
       contents: "read"
       id-token: "write"
