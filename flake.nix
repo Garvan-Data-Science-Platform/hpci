@@ -1,11 +1,18 @@
 {
   description = "hpci";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/release-23.11";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/release-23.11";
+    flake-utils.url = "github:numtide/flake-utils";
+    static-haskell-nix = {
+      url = "github:nh2/static-haskell-nix";
+      flake = false;
+    };
+  };
 
-  outputs = inputs:
+  outputs = { self, nixpkgs, flake-utils, static-haskell-nix }:
     let
+      compiler = "ghc948";
       overlay = final: prev: {
         haskell = prev.haskell // {
           packageOverrides = hfinal: hprev:
@@ -15,9 +22,20 @@
         };
         hpci = final.haskell.lib.compose.justStaticExecutables final.haskellPackages.hpci;
       };
+      staticOverlay = final: prev: {
+        haskell = prev.haskell // {
+          packages = prev.haskell.packages // {
+            ${compiler} = prev.haskell.packages.${compiler}.override {
+              overrides = final: prev: {
+                hpci = final.callCabal2nix "hpci" ./. { };
+              };
+            };
+          };
+        };
+      };
       perSystem = system:
         let
-          pkgs = import inputs.nixpkgs { inherit system; overlays = [ overlay ]; };
+          pkgs = import nixpkgs { inherit system; overlays = [ overlay staticOverlay ]; };
           hspkgs = pkgs.haskellPackages;
         in
         {
@@ -40,8 +58,9 @@
           packages = rec {
             default = hpci;
             hpci = pkgs.hpci;
+            static = static-haskell-nix.survey.haskellPackages.${compiler}.hpci;
           };
         };
     in
-    { inherit overlay; } // inputs.flake-utils.lib.eachDefaultSystem perSystem;
+    { inherit overlay; } // flake-utils.lib.eachDefaultSystem perSystem;
 }

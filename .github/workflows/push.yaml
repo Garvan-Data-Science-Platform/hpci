@@ -19,8 +19,8 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - uses: DeterminateSystems/flake-checker-action@main
 
-      - name: Run `nix build`
-        run: nix build .
+      - name: Run `nix build` static
+        run: nix build .#packages.x86_64-linux.static
 
       - name: Authenticate to google cloud
         uses: google-github-actions/auth@v2
