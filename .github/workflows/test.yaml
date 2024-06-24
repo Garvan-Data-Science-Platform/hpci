@@ -1,20 +1,15 @@
 name: tests
 
-on:
-  push:
-    branches:
-      - main
+on: [workflow_call]
 
 jobs:
   nix-build:
     name: Nix build and push
-    permissions:
-      contents: "read"
-      id-token: "write"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: cachix/install-nix-action@v20
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Build dependencies
         run: nix develop --command ghc --version
       - name: Build hpci
@@ -65,30 +60,3 @@ jobs:
       - run: cabal new-build --only-dependencies
       - run: cabal new-build
       - run: cabal new-test --test-show-details=direct
-
-  gcp-auth:
-    name: Authenticate to google cloud
-    steps:
-      - uses: google-github-actions/auth@v2
-      - with:
-          create_credentials_file: "true"
-          service_account: "grunner-ci-sa@${{secrets.PROJECT_ID}}.iam.gserviceaccount.com"
-          workload_identity_provider: "projects/${{secrets.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/${{secrets.PROJECT_ID}}-workload-id-pool/providers/github-provider"
-
-  setup-sdk:
-    name: Set up gcloud SDK
-    steps:
-      - uses: google-github-actions/setup-gcloud@v2
-      - with:
-          version: latest
-
-  push:
-    name: Push to GCP Artifact Registry
-    steps:
-      - run: |
-          gcloud artifacts generic upload \
-            --location=australia-southeast1 \
-            --source=./result/bin/hpci-exe \
-            --package=hpci \
-            --version=0.0.1 \
-            --repository=generic

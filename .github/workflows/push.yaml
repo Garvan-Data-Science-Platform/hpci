@@ -1,0 +1,44 @@
+name: Push to GCP Artifact Registry
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tests:
+    uses: ./.github/workflows/test.yaml
+  push_to_registry:
+    needs: [tests]
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
+
+      - name: Run `nix build`
+        run: nix build .
+
+      - name: Authenticate to google cloud
+        uses: google-github-actions/auth@v2
+        with:
+          create_credentials_file: "true"
+          service_account: "grunner-ci-sa@${{secrets.PROJECT_ID}}.iam.gserviceaccount.com"
+          workload_identity_provider: "projects/${{secrets.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/${{secrets.PROJECT_ID}}-workload-id-pool/providers/github-provider"
+
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: latest
+
+      - name: Push to GCP Artifact Registry
+        run: |
+          gcloud artifacts generic upload \
+            --location=australia-southeast1 \
+            --source=./result/bin/hpci-exe \
+            --package=hpci \
+            --version=0.0.1 \
+            --repository=generic
