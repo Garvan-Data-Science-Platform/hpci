@@ -49,9 +49,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - uses: haskell-actions/setup@v1
+      - uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc }}
+          cabal-version: "2.4.0.0"
       - uses: actions/cache@v2
         with:
           path: |
