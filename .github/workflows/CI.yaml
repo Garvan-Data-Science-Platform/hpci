@@ -1,17 +1,20 @@
-name: CI
+name: tests
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
 
 jobs:
-
   nix-build:
-    name: Nix build
+    name: Nix build and push
+    permissions:
+      contents: "read"
+      id-token: "write"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: cachix/install-nix-action@v16
+      - uses: cachix/install-nix-action@v20
       - name: Build dependencies
         run: nix develop --command ghc --version
       - name: Build hpci
@@ -19,33 +22,34 @@ jobs:
       - name: Build hpci shell
         run: nix build -L '.#devShells.x86_64-linux.default'
 
-  stack-build:
-    name: Stack ${{ matrix.resolver }} on ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        resolver: [ nightly, lts-19, lts-18, lts-17, lts-16, lts-15, lts-14 ]
-        os: [ macos-latest, ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: haskell/actions/setup@v1
-        with:
-          enable-stack: true
-      ## For some reason, stack caching seems to be very brittle, and cause a lot of build failures.
-      ## I haven't investigated very thoroughly what to best do about this, but for now, I'm just not caching stack builds.
-      - run: stack init --resolver ${{ matrix.resolver }}
-      - run: stack build --resolver ${{ matrix.resolver }} --only-dependencies
-      - run: stack build --resolver ${{ matrix.resolver }}
-      - run: stack build --resolver ${{ matrix.resolver }} --haddock --test --bench --no-run-benchmarks
+  # stack-build:
+  #   name: Stack ${{ matrix.resolver }} on ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       resolver: [nightly, lts-19, lts-18, lts-17, lts-16, lts-15, lts-14]
+  #       os: [macos-latest, ubuntu-latest]
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: haskell/actions/setup@v1
+  #       with:
+  #         enable-stack: true
+  #     ## For some reason, stack caching seems to be very brittle, and cause a lot of build failures.
+  #     ## I haven't investigated very thoroughly what to best do about this, but for now, I'm just not caching stack builds.
+  #     - run: stack init --resolver ${{ matrix.resolver }}
+  #     - run: stack build --resolver ${{ matrix.resolver }} --only-dependencies
+  #     - run: stack build --resolver ${{ matrix.resolver }}
+  #     - run: stack build --resolver ${{ matrix.resolver }} --haddock --test --bench --no-run-benchmarks
 
   cabal-build:
     name: Cabal with GHC ${{ matrix.ghc }} on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        ghc: [ '8.6.5', '8.8.3', '8.10.7', '9.0.2', '9.2.2' ]
-        os: [ ubuntu-latest, macos-latest ]
+        # ghc: ["8.6.5", "8.8.3", "8.10.7", "9.0.2", "9.2.2"]
+        ghc: ["9.2.2"]
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -61,3 +65,26 @@ jobs:
       - run: cabal new-build --only-dependencies
       - run: cabal new-build
       - run: cabal new-test --test-show-details=direct
+
+  gcp-auth:
+    name: Authenticate to google cloud
+    uses: google-github-actions/auth@v2
+    with:
+      create_credentials_file: "true"
+      service_account: "grunner-ci-sa@${{secrets.PROJECT_ID}}.iam.gserviceaccount.com"
+      workload_identity_provider: "projects/${{secrets.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/${{secrets.PROJECT_ID}}-workload-id-pool/providers/github-provider"
+
+  setup-sdk:
+    name: Set up gcloud SDK
+    uses: google-github-actions/setup-gcloud@v2
+    with:
+      version: latest
+
+  push:
+    name: Push to GCP Artifact Registry
+      gcloud artifacts generic upload \
+      --location=australia-southeast1 \
+      --source=./result/bin/hpci-exe \
+      --package=hpci \
+      --version=0.0.1 \
+      --repository=generic

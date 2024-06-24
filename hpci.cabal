@@ -5,7 +5,7 @@ license:         BSD-3-Clause
 build-type:      Simple
 license-file:    LICENSE
 author:          ignatiusm
-maintainer:      ignatiusm <ignatius.menzies@gmail.com>
+maintainer:      ignatiusm <i.menzies@garvan.org.au>
 copyright:       2024 ignatiusm
 tested-with:     GHC ==8.6.5 || ==8.8.3 || ==8.10.7 || ==9.0.2 || ==9.2.2
 extra-doc-files:
@@ -40,7 +40,11 @@ executable hpci-exe
   import:         common-options
   hs-source-dirs: app
   main-is:        Main.hs
-  build-depends:  hpci
+  build-depends:
+    , hpci
+    , bytestring
+    , filepath
+    , libssh2
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
 
 test-suite hpci-test

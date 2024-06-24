@@ -32,6 +32,8 @@
                 hspkgs.hlint
                 hspkgs.ormolu
                 pkgs.bashInteractive
+                pkgs.pkg-config
+                pkgs.libssh2
               ];
             };
           };

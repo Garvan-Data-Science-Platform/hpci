@@ -1,5 +1,12 @@
+### hpci ###
+*.pbs
+*.log
+
 ### Nix ###
 result
+
+### Direnv ###
+.direnv
 
 ### Haskell ###
 dist
