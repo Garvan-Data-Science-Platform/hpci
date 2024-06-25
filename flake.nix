@@ -31,6 +31,9 @@
             compiler = "ghc948";
             normalPkgs = staticPkgs;
           };
+          appendConfigureFlags = drv: flags: drv.overrideAttrs (old: {
+            configureFlags = (old.configureFlags or []) ++ flags;
+          });
         in
         {
           devShells = rec {
@@ -52,12 +55,17 @@
           packages = rec {
             default = hpci;
             hpci = pkgs.hpci;
-            static = survey.haskellPackages.hpci;
-              buildInputs = [
-                pkgs.pkg-config
-                pkgs.libssh2
-                pkgs.zlib
-              ];
+            static = appendConfigureFlags survey.haskellPackages.hpci [
+              "--ghc-option=-optl=-static"
+              "--extra-lib-dirs=${staticPkgs.zlib.static}/lib"
+              "--extra-lib-dirs=${staticPkgs.libssh2.override { zlibSupport = true; }}/lib"
+              "--extra-lib-dirs=${staticPkgs.gmp6.override { withStatic = true; }}/lib"
+              "--extra-lib-dirs=${staticPkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+            ];
+            buildInputs = [
+              pkgs.pkg-config
+              (pkgs.libssh2.override { zlibSupport = true; })
+            ];
           };
         };
     in
