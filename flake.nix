@@ -33,7 +33,7 @@
 
           staticPkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
           survey = import "${static-haskell-nix}/survey" {
-            compiler = "ghc948";
+            compiler = "ghc945";
             normalPkgs = staticPkgs;
           };
         in
