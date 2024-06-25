@@ -12,7 +12,6 @@
 
   outputs = { self, nixpkgs, flake-utils, static-haskell-nix }:
     let
-      compiler = "ghc948";
       overlay = final: prev: {
         haskell = prev.haskell // {
           packageOverrides = hfinal: hprev:
@@ -22,21 +21,16 @@
         };
         hpci = final.haskell.lib.compose.justStaticExecutables final.haskellPackages.hpci;
       };
-      staticOverlay = final: prev: {
-        haskell = prev.haskell // {
-          packages = prev.haskell.packages // {
-            ${compiler} = prev.haskell.packages.${compiler}.override {
-              overrides = final: prev: {
-                hpci = final.callCabal2nix "hpci" ./. { };
-              };
-            };
-          };
-        };
-      };
       perSystem = system:
         let
-          pkgs = import nixpkgs { inherit system; overlays = [ overlay staticOverlay ]; };
+          pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
           hspkgs = pkgs.haskellPackages;
+
+          staticPkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
+          survey = import "${static-haskell-nix}/survey" {
+            compiler = "ghc948";
+            normalPkgs = staticPkgs;
+          };
         in
         {
           devShells = rec {
@@ -58,7 +52,11 @@
           packages = rec {
             default = hpci;
             hpci = pkgs.hpci;
-            static = static-haskell-nix.survey.haskellPackages.${compiler}.hpci;
+            static = survey.haskellPackages.hpci;
+              buildInputs = [
+                pkgs.pkg-config
+                pkgs.libssh2
+              ];
           };
         };
     in
