@@ -27,7 +27,10 @@
           hspkgs = pkgs.haskellPackages;
 
           staticPkgs = import nixpkgs { inherit system; overlays = [ overlay static-haskell-nix.overlay ]; };
-          staticHspkgs = staticPkgs.haskell.packages.ghc948;
+          survey = import "${static-haskell-nix}/survey" {
+            compiler = "ghc948";
+            normalPkgs = staticPkgs;
+          };
           appendConfigureFlags = drv: flags: drv.overrideAttrs (old: {
             configureFlags = (old.configureFlags or []) ++ flags;
           });
@@ -52,17 +55,21 @@
           packages = rec {
             default = hpci;
             hpci = pkgs.hpci;
-            static = appendConfigureFlags staticHspkgs.hpci [
+            enableSharedExecutables = false;
+            enableSharedLibraries = false;
+            static = appendConfigureFlags survey.haskellPackages.hpci [
               "--ghc-option=-optl=-static"
               "--ghc-option=-optl=-pthread"
-              "--extra-lib-dirs=${staticPkgs.zlib.static}/lib"
-              "--extra-lib-dirs=${staticPkgs.libssh2}/lib"
               "--ghc-option=-fPIC"
               "--ghc-option=-optc=-fPIC"
               "--ghc-option=-optl=-static-libgcc"
               "--ghc-option=-optl=-static-libstdc++"
               "--ghc-option=-optl=-lm"
               "--ghc-option=-optl=-lstdc++"
+              "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
+              "--extra-lib-dirs=${staticPkgs.zlib.static}/lib"
+              "--extra-lib-dirs=${staticPkgs.libssh2}/lib"
+              "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
             ];
             buildInputs = [
               staticPkgs.pkg-config
