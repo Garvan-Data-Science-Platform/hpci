@@ -28,7 +28,7 @@
 
           staticPkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
           survey = import "${static-haskell-nix}/survey" {
-            compiler = "ghc927";
+            compiler = "ghc928";
             normalPkgs = staticPkgs;
           };
         in
