@@ -59,7 +59,7 @@
               "--ghc-option=-optl=-static"
               "--ghc-option=-optl=-pthread"
               "--extra-lib-dirs=${staticPkgs.zlib.static}/lib"
-              "--extra-lib-dirs=${staticPkgs.libssh2}/lib"
+              "--extra-lib-dirs=${staticPkgs.libssh2.static}/lib"
               "--ghc-option=-fPIC"
               "--ghc-option=-optc=-fPIC"
             ];
