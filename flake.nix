@@ -2,7 +2,12 @@
   description = "hpci";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/release-23.11";
+    #nixpkgs.url = "github:NixOS/nixpkgs/release-23.11";
+    nixpkgs = {
+      url = "https://github.com/nh2/nixpkgs/archive/9e49f8f1f37bc906cda1adb33064c325d760819a.tar.gz";
+      type = "tarball";
+      flake = false;
+    };
     flake-utils.url = "github:numtide/flake-utils";
     static-haskell-nix = {
       url = "github:nh2/static-haskell-nix";
