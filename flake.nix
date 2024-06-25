@@ -36,6 +36,10 @@
           jailbreakUnbreak = pkg: staticPkgs.haskell.lib.doJailbreak (pkg.overrideAttrs (_: { meta = { }; }));
           inherit (staticPkgs.haskell.lib) appendConfigureFlags justStaticExecutables;
           mypackage = haskellPackages.callCabal2nix packageName self rec {
+            c-ares = staticPkgs.c-ares.override {
+              enableShared = false;
+              enableStatic = true;
+            };
           };
         in
         {
