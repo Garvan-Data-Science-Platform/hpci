@@ -26,11 +26,8 @@
           pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
           hspkgs = pkgs.haskellPackages;
 
-          staticPkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
-          survey = import "${static-haskell-nix}/survey" {
-            compiler = "ghc948";
-            normalPkgs = staticPkgs;
-          };
+          staticPkgs = import nixpkgs { inherit system; overlays = [ overlay (import "${static-haskell-nix}/overlay.nix" { inherit pkgs; }) ]; };
+          staticHspkgs = staticPkgs.haskell.packages.ghc948;
           appendConfigureFlags = drv: flags: drv.overrideAttrs (old: {
             configureFlags = (old.configureFlags or []) ++ flags;
           });
@@ -55,7 +52,7 @@
           packages = rec {
             default = hpci;
             hpci = pkgs.hpci;
-            static = appendConfigureFlags survey.haskellPackages.hpci [
+            static = appendConfigureFlags staticHspkgs.hpci [
               "--ghc-option=-optl=-static"
               "--ghc-option=-optl=-pthread"
               "--extra-lib-dirs=${staticPkgs.zlib.static}/lib"
