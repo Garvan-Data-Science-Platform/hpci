@@ -20,7 +20,7 @@ jobs:
       - uses: DeterminateSystems/flake-checker-action@main
 
       - name: Run `nix build` static
-        run: nix build .#packages.x86_64-linux.static
+        run: nix build
 
       - name: Authenticate to google cloud
         uses: google-github-actions/auth@v2
