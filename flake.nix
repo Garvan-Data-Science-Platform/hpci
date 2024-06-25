@@ -26,7 +26,7 @@
           pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
           hspkgs = pkgs.haskellPackages;
 
-          staticPkgs = import nixpkgs { inherit system; overlays = [ overlay (import "${static-haskell-nix}/overlay.nix" { inherit pkgs; }) ]; };
+          staticPkgs = import nixpkgs { inherit system; overlays = [ overlay static-haskell-nix.overlay ]; };
           staticHspkgs = staticPkgs.haskell.packages.ghc948;
           appendConfigureFlags = drv: flags: drv.overrideAttrs (old: {
             configureFlags = (old.configureFlags or []) ++ flags;
