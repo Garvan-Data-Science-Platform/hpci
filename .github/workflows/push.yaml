@@ -2,7 +2,7 @@ name: Push to GCP Artifact Registry
 on:
   push:
     branches:
-      - main
+      - test
 
 jobs:
   # tests:
