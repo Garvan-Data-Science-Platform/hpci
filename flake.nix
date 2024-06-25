@@ -58,13 +58,12 @@
             static = appendConfigureFlags survey.haskellPackages.hpci [
               "--ghc-option=-optl=-static"
               "--extra-lib-dirs=${staticPkgs.zlib.static}/lib"
-              "--extra-lib-dirs=${staticPkgs.libssh2.override { zlibSupport = true; }}/lib"
-              "--extra-lib-dirs=${staticPkgs.gmp6.override { withStatic = true; }}/lib"
-              "--extra-lib-dirs=${staticPkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+              "--extra-lib-dirs=${staticPkgs.libssh2}/lib"
             ];
             buildInputs = [
               pkgs.pkg-config
-              (pkgs.libssh2.override { zlibSupport = true; })
+              pkgs.libssh2
+              pkgs.zlib
             ];
           };
         };
