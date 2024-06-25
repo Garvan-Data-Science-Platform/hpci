@@ -62,6 +62,10 @@
               "--extra-lib-dirs=${staticPkgs.libssh2}/lib"
               "--ghc-option=-fPIC"
               "--ghc-option=-optc=-fPIC"
+              "--ghc-option=-optl=-static-libgcc"
+              "--ghc-option=-optl=-static-libstdc++"
+              "--ghc-option=-optl=-lm"
+              "--ghc-option=-optl=-lstdc++"
             ];
             buildInputs = [
               staticPkgs.pkg-config
