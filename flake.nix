@@ -59,14 +59,14 @@
               "--ghc-option=-optl=-static"
               "--ghc-option=-optl=-pthread"
               "--extra-lib-dirs=${staticPkgs.zlib.static}/lib"
-              "--extra-lib-dirs=${staticPkgs.libssh2.static}/lib"
+              "--extra-lib-dirs=${staticPkgs.libssh2}/lib"
               "--ghc-option=-fPIC"
               "--ghc-option=-optc=-fPIC"
             ];
             buildInputs = [
-              pkgs.pkg-config
-              pkgs.libssh2
-              pkgs.zlib
+              staticPkgs.pkg-config
+              staticPkgs.libssh2
+              staticPkgs.zlib
             ];
           };
         };
