@@ -25,7 +25,7 @@
                   "--ghc-option=-optl=-static"
                   "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
                   "--extra-lib-dirs=${pkgs.libssh2}/lib"
-                  "--extra-lib-dirs=${pkgs.pkg-config.static}/lib"
+                  "--extra-lib-dirs=${pkgs.pkg-config}/lib"
                   "--extra-lib-dirs=${pkgs.zlib.static}/lib"
                   "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
             ];
