@@ -10,6 +10,7 @@
     flake-utils.lib.eachDefaultSystem
       (system:
         let pkgs = nixpkgs.legacyPackages.${system}.pkgsMusl;
+            nonMusl = nixpkgs.legacyPackages.${system}.pkgsStatic;
             haskellPackages = pkgs.haskell.packages.ghc948;
             packageName = "hpci";
             jailbreakUnbreak = pkg: pkgs.haskell.lib.doJailbreak (pkg.overrideAttrs (_: { meta = { }; }));
@@ -25,7 +26,7 @@
                   "--ghc-option=-optl=-static"
                   "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
                   "--extra-lib-dirs=${pkgs.libssh2.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
-                  "--extra-lib-dirs=${pkgs.pkgsStatic.openssl}/lib"
+                  "--extra-lib-dirs=${nonMusl.openssl}/lib"
                   "--extra-lib-dirs=${pkgs.pkg-config}/lib"
                   "--extra-lib-dirs=${pkgs.zlib.static}/lib"
                   "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
