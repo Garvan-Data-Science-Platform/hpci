@@ -14,7 +14,9 @@
             packageName = "hpci";
             jailbreakUnbreak = pkg: pkgs.haskell.lib.doJailbreak (pkg.overrideAttrs (_: { meta = { }; }));
             inherit (pkgs.haskell.lib) appendConfigureFlags justStaticExecutables;
+            openssl = pkgs.openssl.override { static = true; };
             mypackage = haskellPackages.callCabal2nix packageName self rec {
+              openssl = openssl;
             };
         in
         {
@@ -25,7 +27,7 @@
                   "--ghc-option=-optl=-static"
                   "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
                   "--extra-lib-dirs=${pkgs.libssh2.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
-                  "--extra-lib-dirs=${pkgs.openssl.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+                  "--extra-lib-dirs=${openssl.out}/lib"
                   "--extra-lib-dirs=${pkgs.zlib.static}/lib"
                   "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
             ];
