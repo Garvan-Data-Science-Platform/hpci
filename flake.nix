@@ -24,8 +24,8 @@
             configureFlags =     [
                   "--ghc-option=-optl=-static"
                   "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
-                  "--extra-lib-dirs=${pkgs.libssh2.override { withStatic = true; }}/lib"
-                  "--extra-lib-dirs=${pkgs.openssl.override { withStatic = true; }}/lib"
+                  "--extra-lib-dirs=${pkgs.libssh2.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+                  "--extra-lib-dirs=${pkgs.openssl.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
                   "--extra-lib-dirs=${pkgs.zlib.static}/lib"
                   "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
             ];
