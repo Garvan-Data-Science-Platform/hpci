@@ -10,7 +10,7 @@
     flake-utils.lib.eachDefaultSystem
       (system:
         let pkgs = nixpkgs.legacyPackages.${system}.pkgsMusl;
-            nonMusl = nixpkgs.legacyPackages.${system}.pkgsStatic;
+            static_ssl = (pkgs.openssl.override { static = true;});
             haskellPackages = pkgs.haskell.packages.ghc948;
             packageName = "hpci";
             jailbreakUnbreak = pkg: pkgs.haskell.lib.doJailbreak (pkg.overrideAttrs (_: { meta = { }; }));
@@ -25,18 +25,18 @@
             configureFlags =     [
                   "--ghc-option=-optl=-static"
                   "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
-                  "--extra-lib-dirs=${pkgs.libssh2}/lib"
-                  "--extra-lib-dirs=${pkgs.openssl}/lib"
-                  "--extra-lib-dirs=${pkgs.pkg-config}/lib"
-                  "--extra-lib-dirs=${pkgs.zlib.static}/lib"
                   "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+                  "--extra-lib-dirs=${pkgs.libssh2.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+                  "--extra-lib-dirs=${pkgs.pkg-config}/lib"
+                  "--extra-lib-dirs=${static_ssl}/lib"
+                  "--extra-lib-dirs=${pkgs.zlib.static}/lib"
             ];
-            buildInputs = [
-              pkgs.libssh2
-              pkgs.openssl
-              pkgs.pkg-config
-              pkgs.zlib
+            buildDepends = [
               pkgs.libffi
+              pkgs.libssh2
+              pkgs.pkg-config
+              static_ssl
+              pkgs.zlib
             ];
           });
 
