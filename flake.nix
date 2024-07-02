@@ -24,6 +24,8 @@
             enableSharedLibraries = false;
             configureFlags =     [
                   "--ghc-option=-optl=-static"
+                  "--ghc-option=-optl=-L${pkgs.zlib.static}/lib"
+                  "--ghc-option=-optl=-lz"
                   "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
                   "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
                   "--extra-lib-dirs=${pkgs.libssh2.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
@@ -36,7 +38,7 @@
               pkgs.libssh2
               pkgs.pkg-config
               static_ssl
-              pkgs.zlib
+              pkgs.zlib.static
             ];
           });
 
