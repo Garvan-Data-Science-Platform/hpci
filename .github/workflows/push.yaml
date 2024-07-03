@@ -1,8 +1,6 @@
 name: Push to GCP Artifact Registry
 on:
   push:
-    branches:
-      - test
 
 jobs:
   # tests:
@@ -20,7 +18,7 @@ jobs:
       - uses: DeterminateSystems/flake-checker-action@main
 
       - name: Run `nix build` static
-        run: nix build
+        run: nix build .#packages.x86_64-linux.hpci
 
       # - name: Authenticate to google cloud
       #   uses: google-github-actions/auth@v2
