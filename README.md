@@ -20,7 +20,7 @@ The `flake.nix` file is configured to work for both x86_64-linux and aarch-darwi
   
   - the aarch64-darwin development environment does not use musl-linked packages.
 
-If you do not set up `direnv` (see links above), use `nix develop .#devShells.x86_64-linux` or `nix develop .#devShells.aarch64-darwin` depending on your architecture + operating system.
+If you do not set up `direnv` (see links above), activate a nix development environment using `nix develop .#devShells.x86_64-linux` or `nix develop .#devShells.aarch64-darwin` depending on your architecture + operating system.
 
 To build a statically linked executable on x86_64-linux use `nix build .#packages.x86_64-linux.hpci`.
 
