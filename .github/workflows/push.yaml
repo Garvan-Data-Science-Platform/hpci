@@ -59,9 +59,6 @@ jobs:
 
       - name: Start Dockerised PBS
         run: |
-          wc test_key.pub
-          wc test_key
-          ls -la
           docker run \
             -d --rm \
             -p 2222:22 \
@@ -79,9 +76,7 @@ jobs:
           echo "PBS properly configured"
 
       - name: Run test
-        run: |
-          docker exec -u pbsuser pbs ls -l /home/pbsuser/.ssh
-          result/bin/hpci-exe pbsuser localhost 2222 qsub test_key.pub test_key ci/test_job.pbs test_job.log
+        run: result/bin/hpci-exe pbsuser localhost 2222 qsub test_key.pub test_key ci/test_job.pbs test_job.log
 
       - name: Clean up
         run: |

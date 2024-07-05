@@ -1,0 +1,11 @@
+#! /bin/bash
+#PBS -N testjob
+#PBS -S /bin/bash
+#PBS -q workq
+#PBS -j oe
+
+set -eu -0 pipefail
+
+qstat --version
+
+echo "$(qstat --version)" > test_job.log 2>&1

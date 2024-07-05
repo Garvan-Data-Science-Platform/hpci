@@ -1,5 +1,4 @@
 ### hpci ###
-*.pbs
 *.log
 
 ### Nix ###
