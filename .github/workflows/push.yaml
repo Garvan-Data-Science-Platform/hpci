@@ -77,15 +77,8 @@ jobs:
 
       - name: Run test
         run: |
-          result/bin/hpci-exe \
-            pbsuser \
-            localhost \
-            2222 \
-            qsub \
-            test_key.pub \
-            test_key \
-            ci/test_job.pbs \
-            test_job.log
+          ls
+          result/bin/hpci-exe pbsuser localhost 2222 qsub test_key.pub test_key ci/test_job.pbs test_job.log
           cat test_job.log
 
       - name: Clean up
