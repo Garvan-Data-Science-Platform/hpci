@@ -64,7 +64,7 @@ jobs:
             -p 2222:22 \
             --name pbs \
             -h pbs_container \
-            -v test_key.pub:/tmp/authorized_keys:ro \
+            -v test_key.pub:/tmp/authorized_keys \
             ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest \
             bash /run.sh
           while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 1 ]
