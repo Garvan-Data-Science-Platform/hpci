@@ -6,10 +6,6 @@ on:
     paths:
       - "ci/**"
       - ".github/workflows/build-pbs.yml"
-  pull_request:
-    paths:
-      - "ci/**"
-      - ".github/workflows/build-pbs.yml"
 
 env:
   LOCATION: australia-southeast1
@@ -47,8 +43,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: Dockerfile
+          context: ci/
+          file: ci/Dockerfile
           push: true
           tags: ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest
           cache-from: type=gha
