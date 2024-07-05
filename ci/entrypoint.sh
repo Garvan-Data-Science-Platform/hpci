@@ -14,7 +14,7 @@ sed -i "s/\$clienthost .*/\$clienthost $hostname/" $mom_conf_file
 /etc/init.d/ssh start
 
 # create default non-root user
-adduser pbsuser
+useradd -m -u 1000 -s /bin/bash pbsuser
 
 cp -R /tmp/.ssh /home/pbsuser/.ssh
 chown -R pbsuser /home/pbsuser/.ssh
