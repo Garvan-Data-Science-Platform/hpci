@@ -18,8 +18,10 @@ useradd -m -u 1000 -s /bin/bash pbsuser
 
 mkdir -p /home/pbsuser/.ssh
 cp /tmp/authorized_keys /home/pbsuser/.ssh/authorized_keys
-chown -R pbsuser:pbsuser /home/pbsuser/.ssh
 chmod 700 /home/pbsuser/.ssh
-chmod 600 /home/pbsuser/.ssh
+chmod 644 /home/pbsuser/.ssh/authorized_keys
+chown -R pbsuser:pbsuser /home/pbsuser/.ssh
+
+service ssh restart
 
 exec "$@"

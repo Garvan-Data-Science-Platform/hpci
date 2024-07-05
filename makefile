@@ -11,7 +11,7 @@ run:
 	-p 2222:22 \
 	--name $(IMAGE) \
 	-h pbs_container \
-	-v ./ci/test_key.pub:/tmp/.ssh/authorized_keys:ro \
+	-v ./ci/test_key.pub:/tmp/authorized_keys:ro \
 	$(DOCKER_TAG) /bin/bash -l /run.sh
 	
 interact:
