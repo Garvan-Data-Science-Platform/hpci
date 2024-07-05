@@ -1,6 +1,16 @@
 name: Push to GCP Artifact Registry
 on:
   push:
+    paths-ignore:
+      - "ci/**"
+      - ".github/workflows/build-pbs.yml"
+  pull_request:
+    paths-ignore:
+      - "ci/**"
+      - ".github/workflows/build-pbs.yml"
+
+env:
+  LOCATION: australia-southeast1
 
 jobs:
   # tests:
@@ -20,17 +30,58 @@ jobs:
       - name: Run `nix build` static
         run: nix build .#packages.x86_64-linux.hpci
 
-      # - name: Authenticate to google cloud
-      #   uses: google-github-actions/auth@v2
-      #   with:
-      #     create_credentials_file: "true"
-      #     service_account: "grunner-ci-sa@${{secrets.PROJECT_ID}}.iam.gserviceaccount.com"
-      #     workload_identity_provider: "projects/${{secrets.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/${{secrets.PROJECT_ID}}-workload-id-pool/providers/github-provider"
+      - name: Authenticate to google cloud
+        uses: google-github-actions/auth@v2
+        with:
+          create_credentials_file: "true"
+          service_account: "grunner-ci-sa@${{secrets.PROJECT_ID}}.iam.gserviceaccount.com"
+          workload_identity_provider: "projects/${{secrets.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/${{secrets.PROJECT_ID}}-workload-id-pool/providers/github-provider"
 
-      # - name: Set up gcloud SDK
-      #   uses: google-github-actions/setup-gcloud@v2
-      #   with:
-      #     version: latest
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: latest
+
+      - name: Docker auth
+        run: gcloud auth configure-docker ${{env.LOCATION}}-docker.pkg.dev
+
+      - name: Pull Docker image
+        run: docker pull ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest
+
+      - name: Start Dockerised PBS
+        run: |
+          docker run \
+            -d --rm \
+            -p 2222:22 \
+            --name pbs \
+            -h pbs_container \
+            -v ${{secrets.TEST_KEY_PUB}}:/tmp/.ssh/authorized_keys:ro \
+            ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest \
+            /bin/bash -l /run.sh
+          while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 2 ]
+          do
+            echo "Waiting for PBS node to become available";
+            sleep 2
+          done
+          echo "PBS properly configured"
+
+      - name: Run test
+        run: |
+          result/bin/hpci-exe \
+            pbsuser \
+            localhost \
+            2222 \
+            qsub \
+            ${{secrets.TEST_KEY_PUB}} \
+            ${{secrets.TEST_KEY}} \
+            ci/test_job.pbs \
+            test_job.log
+          cat test_job.log
+
+      - name: Clean up Docker images
+        run: |
+          docker stop pbs
+          docker image prune -f
 
       # - name: Push to GCP Artifact Registry
       #   if: ${{steps.test-docker.outputs.IMAGE_EXISTS == 'FALSE' }}

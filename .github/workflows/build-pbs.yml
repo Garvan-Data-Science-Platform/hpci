@@ -6,6 +6,10 @@ on:
     paths:
       - "ci/**"
       - ".github/workflows/build-pbs.yml"
+  pull_request:
+    paths:
+      - "ci/**"
+      - ".github/workflows/build-pbs.yml"
 
 env:
   LOCATION: australia-southeast1

@@ -38,6 +38,8 @@ WORKDIR "/"
 # clean up install
 RUN rm -r /src/openpbs 
 
+ENV PATH /opt/pbs/bin:$PATH
+
 # Copy entrypoint
 COPY ./*.sh /
 RUN chmod a+x ./*.sh

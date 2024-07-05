@@ -40,3 +40,12 @@ To compile and run the program, use `cabal run exes --` followed by the followin
   - privatekey - *local filepath for ssh private key*
   - script     - *local filepath of `.pbs` script to accomany the `qsub` command*
   - logFile    - *remote filepath of logfile produced by `.pbs` script to copy back to local system*
+
+## Testing
+
+Integration tests are run against a version of OpenPBS dockerised along with an openssh server.
+The code for building the docker image (and associated scripts) are in the `ci` directory.
+It is tricky to build this image on aarch64-darwin as building the docker image involves compiling OpenPBS from source.
+The `.github/workflows/build-pbs.yml` workflow file builds the image in ci (only if there has been a change to code in the `ci` directory, or the `build-pbs.yml` workflow file) and pushes the image to a GCP artifact registry.
+
+The `makefile` also has convenience commands for building the image locally, running a container and interacting with it.
