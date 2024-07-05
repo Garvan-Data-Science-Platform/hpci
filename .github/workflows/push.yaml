@@ -64,10 +64,10 @@ jobs:
             -v test_key.pub:/tmp/.ssh/authorized_keys:ro \
             ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest \
             bash /run.sh
-          while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 2 ]
+          while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 1 ]
           do
             echo "Waiting for PBS node to become available";
-            docker logs pbs
+            docker logs --tail 1 pbs
             sleep 5
           done
           echo "PBS properly configured"
