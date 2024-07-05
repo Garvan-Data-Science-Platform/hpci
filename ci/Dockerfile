@@ -15,7 +15,33 @@ RUN git clone --branch v23.06.06 https://github.com/openpbs/openpbs.git /src/ope
 
 WORKDIR "/src/openpbs"
 RUN bash ./autogen.sh
-RUN ./configure --prefix=/opt/pbs --host=amd
+RUN ./configure --prefix=/opt/pbs
+
+# build
 RUN make
 
-ENTRYPOINT ["bash"]
+# install
+RUN make install
+
+# configure
+RUN /opt/pbs/libexec/pbs_postinstall
+
+# install dependencies for running
+RUN apt-get install -y expat libedit2 postgresql python3 postgresql-contrib sendmail-bin \
+      sudo tcl tk libical3 libcjson1 openssh-server
+
+RUN sed -i 's/PBS_START_MOM=0/PBS_START_MOM=1/g' /etc/pbs.conf
+
+RUN chmod 4755 /opt/pbs/sbin/pbs_iff /opt/pbs/sbin/pbs_rcp
+ 
+WORKDIR "/"
+# clean up install
+RUN rm -r /src/openpbs 
+
+# Copy entrypoint
+COPY ./*.sh /
+RUN chmod a+x ./*.sh
+
+EXPOSE 22
+
+ENTRYPOINT ["bash", "/entrypoint.sh"]
