@@ -1,0 +1,55 @@
+name: Build and push PBS docker image
+
+# Only run if there have been changes to code in `ci` directory
+on:
+  push:
+    paths:
+      - "ci/**"
+      - ".github/workflows/build-pbs.yml"
+  pull_request:
+    paths:
+      - "ci/**"
+      - ".github/workflows/build-pbs.yml"
+
+env:
+  LOCATION: australia-southeast1
+
+jobs:
+  build-and-push-pbs-docker:
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: authenticate to google cloud
+        id: "auth"
+        uses: google-github-actions/auth@v2
+        with:
+          create_credentials_file: "true"
+          service_account: "grunner-ci-sa@${{secrets.PROJECT_ID}}.iam.gserviceaccount.com"
+          workload_identity_provider: "projects/${{secrets.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/${{secrets.PROJECT_ID}}-workload-id-pool/providers/github-provider"
+
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: latest
+
+      - name: Docker auth
+        run: gcloud auth configure-docker ${{env.LOCATION}}-docker.pkg.dev
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Use latest tag, as this is just for PBS used for testing
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
