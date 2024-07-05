@@ -55,7 +55,6 @@ jobs:
         run: |
           echo "$TEST_KEY_PUB" > test_key.pub
           echo "$TEST_KEY" > test_key
-          chmod 600 test_key*
 
       - name: Start Dockerised PBS
         run: |
