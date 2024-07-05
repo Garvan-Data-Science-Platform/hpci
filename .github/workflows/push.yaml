@@ -49,9 +49,12 @@ jobs:
         run: docker pull ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest
 
       - name: Load test keys on runner
+        env:
+          TEST_KEY_PUB: ${{secrets.TEST_KEY_PUB}}
+          TEST_KEY: ${{secrets.TEST_KEY}}
         run: |
-          echo "${{secrets.TEST_KEY_PUB}}" > test_key.pub
-          echo "${{secrets.TEST_KEY}}" > test_key
+          echo "$TEST_KEY_PUB" > test_key.pub
+          echo "$TEST_KEY" > test_key
           chmod 600 test_key*
 
       - name: Start Dockerised PBS
