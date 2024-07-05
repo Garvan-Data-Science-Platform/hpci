@@ -59,12 +59,15 @@ jobs:
 
       - name: Start Dockerised PBS
         run: |
+          wc test_key.pub
+          wc test_key
+          ls -la
           docker run \
             -d --rm \
             -p 2222:22 \
             --name pbs \
             -h pbs_container \
-            -v test_key.pub:/tmp/authorized_keys \
+            --mount type=bind,source=$(pwd)/test_key.pub,target=/tmp/authorized_keys \
             ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest \
             bash /run.sh
           while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 1 ]
@@ -77,7 +80,7 @@ jobs:
 
       - name: Run test
         run: |
-          docker exec -u pbsuser pbs ls -l /home/pbsuser/.ssh/authorized_keys
+          docker exec -u pbsuser pbs ls -l /home/pbsuser/.ssh
           result/bin/hpci-exe pbsuser localhost 2222 qsub test_key.pub test_key ci/test_job.pbs test_job.log
 
       - name: Clean up
