@@ -76,9 +76,8 @@ jobs:
 
       - name: Run test
         run: |
-          docker exec -u pbsuser pbs cat /home/pbsuser/.ssh/authorized_keys
+          chmod 600 test_key*
           result/bin/hpci-exe pbsuser localhost 2222 qsub test_key.pub test_key ci/test_job.pbs test_job.log
-          cat test_job.log
 
       - name: Clean up
         run: |
