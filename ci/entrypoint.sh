@@ -16,8 +16,10 @@ sed -i "s/\$clienthost .*/\$clienthost $hostname/" $mom_conf_file
 # create default non-root user
 useradd -m -u 1000 -s /bin/bash pbsuser
 
-cp -R /tmp/.ssh /home/pbsuser/.ssh
+mkdir -p /home/pbsuser/.ssh
+cp /tmp/authorized_keys /home/pbsuser/.ssh/authorized_keys
 chown -R pbsuser /home/pbsuser/.ssh
 chmod 700 /home/pbsuser/.ssh
+chmod 600 /home/pbsuser/.ssh
 
 exec "$@"

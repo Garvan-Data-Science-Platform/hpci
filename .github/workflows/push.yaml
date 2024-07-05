@@ -55,6 +55,7 @@ jobs:
         run: |
           echo "$TEST_KEY_PUB" > test_key.pub
           echo "$TEST_KEY" > test_key
+          chmod 600 test_key*
 
       - name: Start Dockerised PBS
         run: |
@@ -63,7 +64,7 @@ jobs:
             -p 2222:22 \
             --name pbs \
             -h pbs_container \
-            -v test_key.pub:/tmp/.ssh/authorized_keys:ro \
+            -v test_key.pub:/tmp/authorized_keys:ro \
             ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest \
             bash /run.sh
           while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 1 ]
@@ -76,7 +77,6 @@ jobs:
 
       - name: Run test
         run: |
-          chmod 600 test_key*
           result/bin/hpci-exe pbsuser localhost 2222 qsub test_key.pub test_key ci/test_job.pbs test_job.log
 
       - name: Clean up
