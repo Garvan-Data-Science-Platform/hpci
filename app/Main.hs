@@ -10,8 +10,8 @@ import Network.SSH.Client.LibSSH2
 
 runCommand :: Session -> String -> IO (Int, BSL.ByteString)
 runCommand s cmd = withChannel s $ \ch -> do
-         channelExecute ch cmd
-         readAllChannel ch
+  channelExecute ch cmd
+  readAllChannel ch
 
 parseSubmissionResult :: (Int, BSL.ByteString) -> String
 parseSubmissionResult = BSL8.unpack . head . BSL8.split '.' . snd
@@ -21,7 +21,7 @@ parseQstatResponse r = head $ tail $ reverse $ words $ head $ drop 2 $ lines $ B
 
 checkStatus :: Session -> String -> IO String
 checkStatus s jid = do
-  jobStatus <- runCommand s ("qstat -x " ++ jid)
+  jobStatus <- runCommand s ("/opt/pbs/bin/qstat -x " ++ jid)
   return (parseQstatResponse jobStatus)
 
 pollUntilFinished :: Session -> String -> IO ()
@@ -54,7 +54,7 @@ runHpci user host port command public private script logFile = do
   putStrLn $ "Sent: " ++ script ++ " - "++ show scriptSize ++ " bytes."
 
   -- Submit job using script file
-  submissionResult <- runCommand session (command ++ " " ++ script)
+  submissionResult <- runCommand session (command ++ " " ++ takeFileName script)
 
   let jobId = parseSubmissionResult submissionResult
 

@@ -29,7 +29,15 @@ interact: ## Start interactive terminal access to running docker container
 
 .PHONY: test
 test: ## Compile HPCI and test with dockerised OpenPBS (requires `make run` first)
-	cabal run exes -- pbsuser localhost 2222 qsub ci/test_key.pub ci/test_key ci/test_job.pbs remote_action.log
+	cabal run exes -- \
+		pbsuser \
+		localhost \
+		2222 \
+		/opt/pbs/bin/qsub \
+		ci/test_key.pub \
+		ci/test_key \
+		ci/test_job.pbs \
+		test_job.log
 
 .PHONY: stop
 stop: ## Stop the running docker container

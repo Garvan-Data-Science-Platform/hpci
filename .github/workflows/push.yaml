@@ -76,7 +76,16 @@ jobs:
           echo "PBS properly configured"
 
       - name: Run test
-        run: result/bin/hpci-exe pbsuser localhost 2222 qsub test_key.pub test_key ci/test_job.pbs test_job.log
+        run: |
+          result/bin/hpci-exe \
+            pbsuser \
+            localhost \
+            2222 \
+            /opt/pbs/bin/qsub \
+            test_key.pub \
+            test_key \
+            ci/test_job.pbs \
+            test_job.log
 
       - name: Clean up
         run: |
