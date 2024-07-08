@@ -1,7 +1,5 @@
 # inspired by https://github.com/dask/dask-jobqueue/blob/main/ci/pbs/Dockerfile
-# multi-stage build
-# build script will be triggered
-FROM debian:10.13-slim AS builder
+FROM debian:10.13-slim
 # install dependencies for building
 RUN apt-get update
 RUN apt-get -y install gcc make libtool libhwloc-dev libx11-dev \
