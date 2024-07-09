@@ -1,6 +1,6 @@
 ### hpci ###
-*.pbs
 *.log
+ci/test_key*
 
 ### Nix ###
 result

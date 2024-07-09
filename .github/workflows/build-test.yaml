@@ -1,0 +1,92 @@
+name: Build and test hcpi binary
+on:
+  push:
+    paths-ignore:
+      - "ci/**"
+      - ".github/workflows/build-pbs.yml"
+  pull_request:
+    paths-ignore:
+      - "ci/**"
+      - ".github/workflows/build-pbs.yml"
+
+env:
+  LOCATION: australia-southeast1
+
+jobs:
+  build-and-test-hcpi:
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
+
+      - name: Run `nix build` static
+        run: nix build .#packages.x86_64-linux.hpci
+
+      - name: Authenticate to google cloud
+        uses: google-github-actions/auth@v2
+        with:
+          create_credentials_file: "true"
+          service_account: "grunner-ci-sa@${{secrets.PROJECT_ID}}.iam.gserviceaccount.com"
+          workload_identity_provider: "projects/${{secrets.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/${{secrets.PROJECT_ID}}-workload-id-pool/providers/github-provider"
+
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: latest
+
+      - name: Docker auth
+        run: gcloud auth configure-docker ${{env.LOCATION}}-docker.pkg.dev
+
+      - name: Pull Docker image
+        run: docker pull ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest
+
+      - name: Load test keys on runner
+        env:
+          TEST_KEY_PUB: ${{secrets.TEST_KEY_PUB}}
+          TEST_KEY: ${{secrets.TEST_KEY}}
+        run: |
+          echo "$TEST_KEY_PUB" > test_key.pub
+          echo "$TEST_KEY" > test_key
+          chmod 600 test_key*
+
+      - name: Start Dockerised PBS
+        run: |
+          docker run \
+            -d --rm \
+            -p 2222:22 \
+            --name pbs \
+            -h pbs_container \
+            --mount type=bind,source=$(pwd)/test_key.pub,target=/tmp/authorized_keys \
+            ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest \
+            bash /run.sh
+          while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 1 ]
+          do
+            echo "Waiting for PBS node to become available";
+            docker logs --tail 1 pbs
+            sleep 5
+          done
+          echo "PBS properly configured"
+
+      - name: Run test
+        run: |
+          result/bin/hpci-exe \
+            pbsuser \
+            localhost \
+            2222 \
+            /opt/pbs/bin/qsub \
+            test_key.pub \
+            test_key \
+            ci/test_job.pbs \
+            test_job.log
+
+      - name: Clean up
+        run: |
+          docker stop pbs
+          docker image prune -f
+          rm test_key*
