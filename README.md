@@ -48,7 +48,7 @@ The code for building the docker image (and associated scripts) are in the `ci` 
 It is tricky to build this image on aarch64-darwin as building the docker image involves compiling OpenPBS from source.
 
 The `.github/workflows/build-pbs.yml` workflow file builds the image in ci (only if there has been a change to code in the `ci` directory, or the `build-pbs.yml` workflow file) and pushes the image to a GCP artifact registry.
-The `.github/workflows/push.yml` builds a fully statically linked version of `hpci`, pulls the test docker image, and runs the new `hpci` binary to connect to the OpenPBS docker container and run a basic job submission.
+The `.github/workflows/build-test.yml` builds a fully statically linked version of `hpci`, pulls the test docker image, and runs the new `hpci` binary to connect to the OpenPBS docker container and run a basic job submission.
 
 ## Testing locally
 

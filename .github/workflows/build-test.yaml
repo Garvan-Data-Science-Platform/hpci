@@ -13,10 +13,7 @@ env:
   LOCATION: australia-southeast1
 
 jobs:
-  # tests:
-  #   uses: ./.github/workflows/test.yaml
   push_to_registry:
-    # needs: [tests]
     permissions:
       contents: "read"
       id-token: "write"
@@ -92,13 +89,3 @@ jobs:
           docker stop pbs
           docker image prune -f
           rm test_key*
-
-      # - name: Push to GCP Artifact Registry
-      #   if: ${{steps.test-docker.outputs.IMAGE_EXISTS == 'FALSE' }}
-      #   run: |
-      #     gcloud artifacts generic upload \
-      #       --location=australia-southeast1 \
-      #       --source=./result/bin/hpci-exe \
-      #       --package=hpci \
-      #       --version=0.0.1 \
-      #       --repository=generic
