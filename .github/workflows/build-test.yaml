@@ -1,4 +1,4 @@
-name: Push to GCP Artifact Registry
+name: Build and test hcpi binary
 on:
   push:
     paths-ignore:
@@ -13,7 +13,7 @@ env:
   LOCATION: australia-southeast1
 
 jobs:
-  push_to_registry:
+  build-and-test-hcpi:
     permissions:
       contents: "read"
       id-token: "write"
