@@ -2,7 +2,7 @@
 
 # Update path
 echo 'source /etc/profile.d/pbs.sh' >> /etc/bash.bashrc
-sed -i '1i\export PATH=$PATH:/opt/pbs/bin' /home/pbsuser/.bashrc
+printf '0a\nexport PATH=$PATH:/opt/pbs/bin\n.\nw\n' | ed -s /home/pbsuser/.bashrc
 
 # Reduce time between PBS scheduling and add history
 qmgr -c "set server scheduler_iteration = 20"
