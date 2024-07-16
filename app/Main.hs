@@ -21,7 +21,7 @@ parseQstatResponse r = head $ tail $ reverse $ words $ head $ drop 2 $ lines $ B
 
 checkStatus :: Session -> String -> IO String
 checkStatus s jid = do
-  jobStatus <- runCommand s ("/opt/pbs/bin/qstat -x " ++ jid)
+  jobStatus <- runCommand s ("qstat -x " ++ jid)
   return (parseQstatResponse jobStatus)
 
 pollUntilFinished :: Session -> String -> IO ()

@@ -79,7 +79,7 @@ jobs:
             pbsuser \
             localhost \
             2222 \
-            /opt/pbs/bin/qsub \
+            qsub \
             test_key.pub \
             test_key \
             ci/test_job.pbs \
