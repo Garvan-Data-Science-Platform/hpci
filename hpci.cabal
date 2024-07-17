@@ -1,7 +1,7 @@
 cabal-version:   2.4
 name:            hpci
 version:         0
-license:         BSD-3-Clause
+license:         GPL-3.0-or-later
 build-type:      Simple
 license-file:    LICENSE
 author:          ignatiusm
