@@ -38,6 +38,17 @@ test: ## Compile HPCI and test with dockerised OpenPBS (requires `make run` firs
 		--script ci/test_job.pbs \
 		--logFile test_job.log
 
+.PHONY: test-bin
+test-bin: ## Test HPCI binary and test with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
+	result/bin/hpci-exe \
+		--user pbsuser \
+		--host localhost \
+		--port 2222 \
+		--publicKey ci/test_key.pub \
+		--privateKey ci/test_key \
+		--script ci/test_job.pbs \
+		--logFile test_job.log
+
 .PHONY: stop
 stop: ## Stop the running docker container
 	docker stop $(IMAGE)
