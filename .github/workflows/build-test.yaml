@@ -63,8 +63,8 @@ jobs:
             --name pbs \
             -h pbs_container \
             --mount type=bind,source=$(pwd)/test_key.pub,target=/tmp/authorized_keys \
-            ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest \
-            bash /run.sh
+            ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest
+
           while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 1 ]
           do
             echo "Waiting for PBS node to become available";
