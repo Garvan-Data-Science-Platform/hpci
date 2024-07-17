@@ -16,13 +16,14 @@ pull: ## Pull a docker image from artifact registry (useful on non-x86_64 machin
 run: ## Start a OpenPBS server and ssh server inside docker container (This requires creating an ssh key called `test_key` in the `ci` directory)
 	docker run \
 	--platform linux/amd64 \
-	-d --rm \
+	-d \
+	--rm \
 	-p 2222:22 \
 	--name $(IMAGE) \
 	-h pbs_container \
 	-v ./ci/test_key.pub:/tmp/authorized_keys:ro \
-	$(DOCKER_TAG) bash /run.sh
-
+	$(DOCKER_TAG)
+	
 .PHONY: interact
 interact: ## Start interactive terminal access to running docker container
 	docker exec -it --user pbsuser $(IMAGE) bash
