@@ -1,6 +1,6 @@
 ### hpci ###
 *.log
-ci/test_key*
+test_key*
 
 ### Nix ###
 result

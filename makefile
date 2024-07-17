@@ -5,23 +5,23 @@ IMAGE:=pbs
 DOCKER_TAG:=$(REGISTRY)$(IMAGE):latest
 
 .PHONY: docker
-docker: ## Build a docker image. Only works on x86_64-linux
+docker: ## Build a docker image. Only works on x86_64-linux. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah docker`).
 	docker build -t $(DOCKER_TAG) ci
 
 .PHONY: pull
-pull: ## Pull a docker image from artifact registry (useful on non-x86_64 machines. Provide REGISTRY argument on commandline (e.g. make REGISTRY=blah pull)
+pull: ## Pull a docker image from artifact registry (useful on non-x86_64 machines. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah pull`).
 	docker pull --platform linux/amd64 $(DOCKER_TAG)
 
 .PHONY: run
-run: ## Start a OpenPBS server and ssh server inside docker container (This requires creating an ssh key called `test_key` in the `ci` directory)
+run: ## Start a OpenPBS server and ssh server inside docker container (This requires creating an ssh key called `test_key` in the root of the `hpci` directory). Provide PROJECT argument on commandline (e.g. `make PROJECT=blah run`).
 	docker run \
 	--platform linux/amd64 \
 	-d --rm \
 	-p 2222:22 \
 	--name $(IMAGE) \
 	-h pbs_container \
-	-v ./ci/test_key.pub:/tmp/authorized_keys:ro \
-	$(DOCKER_TAG) bash /run.sh
+	-v ./test_key.pub:/tmp/authorized_keys:ro \
+	$(DOCKER_TAG)
 
 .PHONY: interact
 interact: ## Start interactive terminal access to running docker container
@@ -33,8 +33,8 @@ test: ## Compile HPCI and test with dockerised OpenPBS (requires `make run` firs
 		--user pbsuser \
 		--host localhost \
 		--port 2222 \
-		--publicKey ci/test_key.pub \
-		--privateKey ci/test_key \
+		--publicKey test_key.pub \
+		--privateKey test_key \
 		--script ci/test_job.pbs \
 		--logFile test_job.log
 
@@ -44,8 +44,8 @@ test-bin: ## Test HPCI binary and test with dockerised OpenPBS (requires `make r
 		--user pbsuser \
 		--host localhost \
 		--port 2222 \
-		--publicKey ci/test_key.pub \
-		--privateKey ci/test_key \
+		--publicKey test_key.pub \
+		--privateKey test_key \
 		--script ci/test_job.pbs \
 		--logFile test_job.log
 

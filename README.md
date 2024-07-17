@@ -52,6 +52,8 @@ The `.github/workflows/build-test.yml` builds a fully statically linked version 
 
 ## Testing locally
 
+Create a ssh key called `test_key` at the root of the `hpci` repository.
+
 The `makefile` has convenience commands for local testing.
 A summary of commands can be accessed using `make help`.
 
@@ -62,4 +64,5 @@ For typical development and testing on an aarch64-darwin machine run:
 - `make PROJECT=[GCP_PROJECT_NAME] run` to run OpenPBS docker container.
 - use `docker logs -f pbs` to watch the logs and wait until the sshd server has been restarted.
 - In a seperate terminal run `ls app/*.hs | entr make test` to recompile and run tests eachtime `hpci` haskell files are saved (requires installing [entr](https://github.com/eradman/entr))
+- If you are on a x86_84-linux machine, then you can run `make test-bin` to test with the compiled binary
 - `make stop` to stop (and automatically remove) docker container when finished
