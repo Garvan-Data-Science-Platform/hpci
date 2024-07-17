@@ -77,10 +77,17 @@ jobs:
         run: |
           result/bin/hpci-exe \
             --help
-          ls -lah
 
       - name: Run test
-        run: make test-bin
+        run: |
+          result/bin/hpci-exe \
+            --user pbsuser \
+            --host localhost \
+            --port 2222 \
+            --publicKey test_key.pub \
+            --privateKey test_key \
+            --script ci/test_job.pbs \
+            --logFile test_job.log
 
       - name: Clean up
         run: |
