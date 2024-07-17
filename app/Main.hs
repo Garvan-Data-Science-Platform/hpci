@@ -86,7 +86,7 @@ runHpci opts = do
   session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
   putStrLn "Start Session"
 
-  -- Authenticate (Leave knownHosts filepath as empty string to prevent strict checking)
+  -- Authenticate (Leave passphrase as empty string)
   publicKeyAuthFile session (user $ connectionInfo opts) (publicKey $ keys opts) (privateKey $ keys opts) ""
   putStrLn "Authorised"
 
