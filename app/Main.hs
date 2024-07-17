@@ -8,8 +8,7 @@ import System.FilePath
 import Network.SSH.Client.LibSSH2.Foreign
 import Network.SSH.Client.LibSSH2
 
-
--- data Entry = Entry { langName :: String, perf3 :: Int, totalChars :: Int} deriving Show
+-- Data types for CLI options
 
 data Options = Options {
   connectionInfo :: Connection,
@@ -28,6 +27,8 @@ data KeyFiles = KeyFiles {
   publicKey  :: FilePath,
   privateKey :: FilePath
 } deriving (Show)
+
+-- Parsers for CLI options
 
 connectionParser :: Parser Connection
 connectionParser = Connection <$> userParser <*> hostParser <*> portParser
@@ -50,6 +51,8 @@ logFileParser = strOption (long "logFile")
 
 options :: Parser Options
 options = Options <$> connectionParser <*> keyFilesParser <*> scriptParser <*> logFileParser
+
+-- Helper functions
 
 runCommand :: Session -> String -> IO (Int, BSL.ByteString)
 runCommand s cmd = withChannel s $ \ch -> do
