@@ -82,12 +82,12 @@ jobs:
         run: |
           result/bin/hpci-exe \
             --user pbsuser \
-          	--host localhost \
-          	--port 2222 \
-          	--publicKey ci/test_key.pub \
-          	--privateKey ci/test_key \
-          	--script ci/test_job.pbs \
-          	--logFile test_job.log
+            --host localhost \
+            --port 2222 \
+            --publicKey ci/test_key.pub \
+            --privateKey ci/test_key \
+            --script ci/test_job.pbs \
+            --logFile test_job.log
 
       - name: Clean up
         run: |
