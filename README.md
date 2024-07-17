@@ -48,7 +48,7 @@ The code for building the docker image (and associated scripts) are in the `ci` 
 It is tricky to build this image on aarch64-darwin as building the docker image involves compiling OpenPBS from source.
 
 The `.github/workflows/build-pbs.yml` workflow file builds the image in ci (only if there has been a change to code in the `ci` directory, or the `build-pbs.yml` workflow file) and pushes the image to a GCP artifact registry.
-The `.github/workflows/build-test.yml` builds a fully statically linked version of `hpci`, pulls the test docker image, and runs the new `hpci` binary to connect to the OpenPBS docker container and run a basic job submission.
+The `.github/workflows/test.yml` builds a fully statically linked version of `hpci`, pulls the test docker image, and runs the new `hpci` binary to connect to the OpenPBS docker container and run a basic job submission.
 
 ## Testing locally
 
@@ -59,6 +59,7 @@ For typical development and testing on an aarch64-darwin machine run:
 - ` gcloud auth login --project [GCP_PROJECT_NAME]`
 - ` gcloud auth configure-docker [GCP_REGION]-docker.pkg.dev/[GCP_PROJECT_NAME]/docker`
 - `make PROJECT=[GCP_PROJECT_NAME] pull` to pull docker image
-- `make PROJECT=[GCP_PROJECT_NAME] run` to run OpenPBS docker container
+- `make PROJECT=[GCP_PROJECT_NAME] run` to run OpenPBS docker container.
+- use `docker logs -f pbs` to watch the logs and wait until the sshd server has been restarted.
 - In a seperate terminal run `ls app/*.hs | entr make test` to recompile and run tests eachtime `hpci` haskell files are saved (requires installing [entr](https://github.com/eradman/entr))
 - `make stop` to stop (and automatically remove) docker container when finished

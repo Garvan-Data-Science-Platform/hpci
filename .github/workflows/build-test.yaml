@@ -73,17 +73,21 @@ jobs:
           done
           echo "PBS properly configured"
 
+      - name: Check CLI
+        run: |
+          result/bin/hpci-exe \
+            --help
+
       - name: Run test
         run: |
           result/bin/hpci-exe \
-            pbsuser \
-            localhost \
-            2222 \
-            qsub \
-            test_key.pub \
-            test_key \
-            ci/test_job.pbs \
-            test_job.log
+            --user pbsuser \
+          	--host localhost \
+          	--port 2222 \
+          	--publicKey ci/test_key.pub \
+          	--privateKey ci/test_key \
+          	--script ci/test_job.pbs \
+          	--logFile test_job.log
 
       - name: Clean up
         run: |
