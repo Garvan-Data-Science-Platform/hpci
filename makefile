@@ -52,6 +52,22 @@ test-bin: ## Test HPCI binary and test with dockerised OpenPBS (requires `make r
 		--logFile test_job.log \
 		-c TEST_VAR1=success,TEST_VAR2=double_success
 
+.PHONY: push-bin
+push-bin: ## Push binary to gcp artifact registry
+	gcloud artifacts generic upload \
+		--location=australia-southeast1 \
+		--source=result/bin/hpci-exe \
+		--package=hpci \
+		--version=0.0.1 \
+		--repository=generic
+
+.PHONY: delete-bin
+delete-bin: ## Delete binary from gcp artifact registry
+	gcloud artifacts versions delete $(VERSION)\
+		--location=australia-southeast1 \
+		--package=hpci \
+		--repository=generic
+
 .PHONY: stop
 stop: ## Stop the running docker container
 	docker stop $(IMAGE)

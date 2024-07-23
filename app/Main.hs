@@ -143,7 +143,8 @@ runHpci opts = do
   putStrLn $ "Sent: " ++ script opts ++ " - "++ show scriptSize ++ " bytes."
 
   -- Submit job using script file
-  -- submissionResult <- runCommand session ("qsub " ++ takeFileName (script opts))
+  putStrLn $ "Qsub command to run on server: " ++ constructQsubCommand opts
+
   submissionResult <- runCommand session (constructQsubCommand opts)
 
   let jobId = parseSubmissionResult submissionResult
