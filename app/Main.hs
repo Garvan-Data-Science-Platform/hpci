@@ -1,7 +1,15 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 
 import Control.Concurrent
+import Data.List (intercalate)
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe)
 import Options.Applicative
 import System.FilePath
 
@@ -14,7 +22,8 @@ data Options = Options {
   connectionInfo :: Connection,
   keys           :: KeyFiles,
   script         :: FilePath,
-  logFile        :: FilePath
+  logFile        :: FilePath,
+  optConfig      :: KeyValuePairs
 } deriving (Show)
 
 data Connection = Connection {
@@ -49,8 +58,31 @@ scriptParser = strOption (long "script")
 logFileParser :: Parser FilePath
 logFileParser = strOption (long "logFile")
 
+type KeyValuePairs = Map Text Text
+
+keyValuePairsReader :: ReadM KeyValuePairs
+keyValuePairsReader = eitherReader parseKeyValuePairs
+
+parseKeyValuePairs :: String -> Either String KeyValuePairs
+parseKeyValuePairs input = do
+  let pairs = T.splitOn "," (T.pack input)
+  parsedPairs <- mapM parsePair pairs
+  return $ Map.fromList parsedPairs
+  where
+    parsePair pair = case T.splitOn "=" pair of
+      [key, value] -> Right (key, value)
+      _            -> Left $ "Invalid key-vale pair: " ++ T.unpack pair
+
+keyValuePairsOption :: Parser (Maybe KeyValuePairs)
+keyValuePairsOption = optional $ option keyValuePairsReader
+  ( long "config"
+  <> short 'c'
+  <> metavar "KEY1=VALUE1,KEY2=VALUE2, ... "
+  <> help "Specify configuration as key-value pairs"
+  )
+
 options :: Parser Options
-options = Options <$> connectionParser <*> keyFilesParser <*> scriptParser <*> logFileParser
+options = Options <$> connectionParser <*> keyFilesParser <*> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption)
 
 -- Helper functions
 
@@ -58,6 +90,19 @@ runCommand :: Session -> String -> IO (Int, BSL.ByteString)
 runCommand s cmd = withChannel s $ \ch -> do
   channelExecute ch cmd
   readAllChannel ch
+
+-- Convert the map to a string of key-value pairs
+mapToString :: Map.Map Text Text -> String
+mapToString = intercalate "," . map (\(k, v) -> T.unpack k ++ "=" ++ T.unpack v) . Map.toList
+
+-- Construct the qsub command with options
+constructQsubCommand :: Options -> String
+constructQsubCommand opts =
+  let configString = mapToString (optConfig opts)
+      configArg = if not (Map.null (optConfig opts)) 
+                  then " -v " ++ configString 
+                  else ""
+  in "qsub" ++ configArg ++ " " ++ takeFileName (script opts)
 
 parseSubmissionResult :: (Int, BSL.ByteString) -> String
 parseSubmissionResult = BSL8.unpack . head . BSL8.split '.' . snd
@@ -98,7 +143,8 @@ runHpci opts = do
   putStrLn $ "Sent: " ++ script opts ++ " - "++ show scriptSize ++ " bytes."
 
   -- Submit job using script file
-  submissionResult <- runCommand session ("qsub " ++ takeFileName (script opts))
+  -- submissionResult <- runCommand session ("qsub " ++ takeFileName (script opts))
+  submissionResult <- runCommand session (constructQsubCommand opts)
 
   let jobId = parseSubmissionResult submissionResult
 
