@@ -16,7 +16,8 @@ pull: ## Pull a docker image from artifact registry (useful on non-x86_64 machin
 run: ## Start a OpenPBS server and ssh server inside docker container (This requires creating an ssh key called `test_key` in the root of the `hpci` directory). Provide PROJECT argument on commandline (e.g. `make PROJECT=blah run`).
 	docker run \
 	--platform linux/amd64 \
-	-d --rm \
+	-d \
+	--rm \
 	-p 2222:22 \
 	--name $(IMAGE) \
 	-h pbs_container \
