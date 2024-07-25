@@ -32,7 +32,7 @@ interact: ## Start interactive terminal access to running docker container
 test: ## Compile HPCI and test with dockerised OpenPBS (requires `make run` first)
 	cabal run exes -- \
 		--user pbsuser \
-		--host localhost \
+		--host 127.0.0.1 \
 		--port 2222 \
 		--publicKey test_key.pub \
 		--privateKey test_key \
