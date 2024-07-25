@@ -52,7 +52,7 @@ The `.github/workflows/build-test.yml` builds a fully statically linked version 
 
 ## Testing locally
 
-Create a ssh key called `test_key` at the root of the `hpci` repository.
+Create a ssh key called `test_key` at the root of the `hpci` repository with `ssh-keygen -t ed25519 -C "hpci_test_key" -f ./test_key`.
 
 The `makefile` has convenience commands for local testing.
 A summary of commands can be accessed using `make help`.
