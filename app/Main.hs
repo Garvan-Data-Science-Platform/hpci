@@ -107,8 +107,18 @@ constructQsubCommand opts =
 parseSubmissionResult :: (Int, BSL.ByteString) -> String
 parseSubmissionResult = BSL8.unpack . head . BSL8.split '.' . snd
 
+-- Parses status field from typical `qstat` response (example below)
+--
+--   ```
+--   Job id            Name             User              Time Use S Queue
+--   ----------------  ---------------- ----------------  -------- - -----
+--   0.pbs_container   STDIN            pbsuser           00:00:00 R workq
+--   ```
+--
+--   The function extracts the 2nd item of the response tuple, unpacks the Bytestring and separates it into a list of lines.
+--   It takes the 3rd line from the list of lines, splits it into a list of words, then selects the 5th word.
 parseQstatResponse :: (Int, BSL.ByteString) -> String
-parseQstatResponse r = head $ tail $ reverse $ words $ (lines (BSL8.unpack $ snd r) !! 2)
+parseQstatResponse r = words (lines (BSL8.unpack $ snd r) !! 2) !! 4 
 
 checkStatus :: Session -> String -> IO String
 checkStatus s jid = do
