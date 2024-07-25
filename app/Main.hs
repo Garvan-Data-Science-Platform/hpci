@@ -70,8 +70,8 @@ parseKeyValuePairs input = do
   return $ Map.fromList parsedPairs
   where
     parsePair pair = case T.splitOn "=" pair of
-      [key, value] -> Right (key, value)
-      _            -> Left $ "Invalid key-vale pair: " ++ T.unpack pair
+      [k, v] -> Right (k, v)
+      _            -> Left $ "Invalid key-value pair: " ++ T.unpack pair
 
 keyValuePairsOption :: Parser (Maybe KeyValuePairs)
 keyValuePairsOption = optional $ option keyValuePairsReader
