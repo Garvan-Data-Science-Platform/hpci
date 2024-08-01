@@ -4,9 +4,7 @@
 #PBS -q workq
 #PBS -j oe
 
-set -eu -0 pipefail
+set -eu -o pipefail
 
 
 echo "Qstat version: $(qstat --version)" > test_job.log 2>&1
-echo "Check config is passed through: $TEST_VAR1" >> test_job.log 2>&1
-echo "Check config is passed through: $TEST_VAR2" >> test_job.log 2>&1
