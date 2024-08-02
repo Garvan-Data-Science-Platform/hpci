@@ -26,7 +26,7 @@ RUN /opt/pbs/libexec/pbs_postinstall
 
 # install dependencies for running
 RUN apt-get install -y expat libedit2 postgresql python3 postgresql-contrib sendmail-bin \
-      sudo tcl tk libical3 libcjson1 openssh-server
+      sudo tcl tk libical3 libcjson1 openssh-server ed
 
 RUN sed -i 's/PBS_START_MOM=0/PBS_START_MOM=1/g' /etc/pbs.conf
 
