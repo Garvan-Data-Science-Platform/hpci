@@ -90,7 +90,6 @@ jobs:
             --logFile test_job.log \
             -c TEST_VAR1=success,TEST_VAR2=double_success
 
-
       - name: Clean up
         run: |
           docker stop pbs

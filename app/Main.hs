@@ -9,8 +9,9 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Options.Applicative
+import System.Exit
 import System.FilePath
 
 import Network.SSH.Client.LibSSH2.Foreign
@@ -63,15 +64,19 @@ type KeyValuePairs = Map Text Text
 keyValuePairsReader :: ReadM KeyValuePairs
 keyValuePairsReader = eitherReader parseKeyValuePairs
 
+-- Function to parse a series of comma separated key-value pairs
 parseKeyValuePairs :: String -> Either String KeyValuePairs
-parseKeyValuePairs input = do
-  let pairs = T.splitOn "," (T.pack input)
-  parsedPairs <- mapM parsePair pairs
-  return $ Map.fromList parsedPairs
-  where
-    parsePair pair = case T.splitOn "=" pair of
-      [k, v] -> Right (k, v)
-      _      -> Left $ "Invalid key-value pair: " ++ T.unpack pair
+parseKeyValuePairs input =
+    let pairs = T.splitOn "," (T.pack input)
+        parsedPairs = mapM (parsePair "=") pairs
+    in fmap Map.fromList parsedPairs
+
+-- Function to parse key value pairs from text where
+  -- keys and values are separated by `sep`
+parsePair :: String -> T.Text -> Either String (T.Text, T.Text)
+parsePair sep pair = case T.splitOn (T.pack sep) pair of
+    [k, v] -> Right (k, v)
+    _      -> Left $ "Invalid key-value pair: " ++ T.unpack pair
 
 keyValuePairsOption :: Parser (Maybe KeyValuePairs)
 keyValuePairsOption = optional $ option keyValuePairsReader
@@ -107,33 +112,47 @@ constructQsubCommand opts =
 parseSubmissionResult :: (Int, BSL.ByteString) -> String
 parseSubmissionResult = BSL8.unpack . head . BSL8.split '.' . snd
 
--- Parses status field from typical `qstat` response (example below)
+-- Parses a field from typical `qstat -xf` response (example below)
 --
 --   ```
---   Job id            Name             User              Time Use S Queue
---   ----------------  ---------------- ----------------  -------- - -----
---   0.pbs_container   STDIN            pbsuser           00:00:00 R workq
+--   Job Id: 122066731.pbs
+--       Job_Name = STDIN
+--       Job_Owner = username@hpc-hostname
+--       resources_used.cpupercent = 1
+--       resources_used.cput = 00:00:00
+--       resources_used.jobfs = 0b
+--       resources_used.mem = 24408kb
+--       resources_used.ncpus = 1
+--       resources_used.vmem = 24408kb
+--       resources_used.walltime = 00:00:31
+--       job_state = F
 --   ```
---
---   The function extracts the 2nd item of the response tuple, unpacks the Bytestring and separates it into a list of lines.
---   It takes the 3rd line from the list of lines, splits it into a list of words, then selects the 5th word.
-parseQstatResponse :: (Int, BSL.ByteString) -> String
-parseQstatResponse r = words (lines (BSL8.unpack $ snd r) !! 2) !! 4 
+--   The function takes a qstat response and a key parameter. It drops the first line of the response, and attempts to parse a key-value pair from each line. If parsing was successful, tries to filter the parsed pairs by those whos key to matches the desired key
+findKeyValuePair :: [T.Text] -> T.Text -> Either String (T.Text, T.Text)
+findKeyValuePair pairs keyOfInterest =
+    case listToMaybe [kv | Right kv@(k, _) <- map (parsePair " = ") pairs, k == keyOfInterest] of
+        Just kv -> Right kv
+        Nothing -> Left $ "Key " ++ T.unpack keyOfInterest ++ " not found"
 
-checkStatus :: Session -> String -> IO String
-checkStatus s jid = do
-  jobStatus <- runCommand s ("qstat -x " ++ jid)
-  return (parseQstatResponse jobStatus)
+checkStatus :: Session -> String -> String -> IO (Either String T.Text)
+checkStatus s jid keyOfInterest = do
+  jobStatus <- runCommand s ("qstat -fx " ++ jid)
+  let statusLines = map (T.strip . T.pack) (tail $ lines (BSL8.unpack $ snd jobStatus))
+  let result = findKeyValuePair statusLines (T.pack keyOfInterest)
+  case result of
+    Right (_,v) -> return $ Right v
+    Left err    -> return $ Left err
 
 pollUntilFinished :: Session -> String -> IO ()
 pollUntilFinished s jid = do
-  r <- checkStatus s jid
+  r <- checkStatus s jid "job_state"
   case r of
-    "F" -> putStrLn ("Job " ++ jid ++ ": Finished")
-    _   -> do
-      putStrLn ("Job status: " ++ r)
+    Right "F" -> putStrLn ("Job " ++ jid ++ ": Finished")
+    Right status -> do
+      putStrLn ("Job status: " ++ T.unpack status)
       threadDelay 2000000
       pollUntilFinished s jid
+    Left err -> putStrLn ("Error: " ++ err)
 
 -- TODO: error handling for IO and parsing job id; parse status of job
 -- TODO: explore Reader monad to replace global variables and thread config through code
@@ -165,6 +184,9 @@ runHpci opts = do
   -- TODO: Add timeout?
   pollUntilFinished session jobId
 
+  -- Get exit status
+  exitStatus <- checkStatus session jobId "Exit_status"
+
   -- Copy logs file off server to ci
   logSize <- scpReceiveFile session (logFile opts) (logFile opts)
   putStrLn $ "Received: " ++ logFile opts ++ " - " ++ show logSize ++ " bytes."
@@ -184,6 +206,16 @@ runHpci opts = do
   putStrLn "Contents of log file:"
   putStr contents
 
+  -- Exit with the same exit status of the HPC job (this gives us a nice CI error)
+  case exitStatus of
+    Left err -> putStrLn $ "WARNING: " ++ err
+    Right s  -> do
+      let exitCode = T.unpack s
+      case exitCode of
+        "0" ->  putStrLn $ "Job Exit Status: " ++ exitCode
+        _   ->  do
+          putStrLn $ "Job Exit Status: " ++ exitCode
+          exitWith (ExitFailure $ read exitCode)
 
 main :: IO()
 main = do
