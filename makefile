@@ -32,12 +32,13 @@ interact: ## Start interactive terminal access to running docker container
 test: ## Compile HPCI and test with dockerised OpenPBS (requires `make run` first)
 	cabal run exes -- \
 		--user pbsuser \
-		--host localhost \
+		--host 127.0.0.1 \
 		--port 2222 \
 		--publicKey test_key.pub \
 		--privateKey test_key \
 		--script ci/test_job.pbs \
-		--logFile test_job.log
+		--logFile test_job.log \
+		-c TEST_VAR1=success,TEST_VAR2=double_success
 
 .PHONY: test-bin
 test-bin: ## Test HPCI binary and test with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
@@ -48,7 +49,24 @@ test-bin: ## Test HPCI binary and test with dockerised OpenPBS (requires `make r
 		--publicKey test_key.pub \
 		--privateKey test_key \
 		--script ci/test_job.pbs \
-		--logFile test_job.log
+		--logFile test_job.log \
+		-c TEST_VAR1=success,TEST_VAR2=double_success
+
+.PHONY: push-bin
+push-bin: ## Push binary to gcp artifact registry
+	gcloud artifacts generic upload \
+		--location=australia-southeast1 \
+		--source=result/bin/hpci-exe \
+		--package=hpci \
+		--version=0.0.1 \
+		--repository=generic
+
+.PHONY: delete-bin
+delete-bin: ## Delete binary from gcp artifact registry
+	gcloud artifacts versions delete $(VERSION)\
+		--location=australia-southeast1 \
+		--package=hpci \
+		--repository=generic
 
 .PHONY: stop
 stop: ## Stop the running docker container

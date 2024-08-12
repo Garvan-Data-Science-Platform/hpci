@@ -32,14 +32,15 @@ You do not need nix to run the code, all you need is the Glascow Haskell Compile
 These can been downloaded using [GHCup](https://www.haskell.org/ghcup/).
 
 To compile and run the program, use `cabal run exes --` followed by the following required arguments:
-  - username   - *username on remote system*
-  - hostname   - *IP address or domain name or remote host*
-  - port       - *port declaration - typically 22*
-  - cmd        - *command to execute on remote system - typically `qsub` on PBS hpci*
-  - publickey  - *local filepath for ssh public key*
-  - privatekey - *local filepath for ssh private key*
-  - script     - *local filepath of `.pbs` script to accomany the `qsub` command*
-  - logFile    - *remote filepath of logfile produced by `.pbs` script to copy back to local system*
+  - --user       *username on remote system*
+  - --host       *IP address or domain name or remote host*
+  - --port       *port declaration - typically 22*
+  - --publickey  *local filepath for ssh public key*
+  - --privatekey *local filepath for ssh private key*
+  - --script     *local filepath of `.pbs` script to accomany the `qsub` command*
+  - --logFile    *remote filepath of logfile produced by `.pbs` script to copy back to local system*
+  - -c           ***Optional*** *Configuration in the form of `KEY1=VALUE1,KEY2=VALUE2` that is passed to `qsub` when submitting the job*
+
 
 ## Testing in CI
 
