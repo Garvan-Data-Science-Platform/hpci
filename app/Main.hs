@@ -21,7 +21,6 @@ import Network.SSH.Client.LibSSH2
 
 data Options = Options {
   connectionInfo :: Connection,
-  keys           :: KeyFiles,
   script         :: FilePath,
   logFile        :: FilePath,
   optConfig      :: KeyValuePairs
@@ -30,10 +29,7 @@ data Options = Options {
 data Connection = Connection {
   user :: String,
   host :: String,
-  port     :: Int
-} deriving (Show)
-
-data KeyFiles = KeyFiles {
+  port     :: Int,
   publicKey  :: FilePath,
   privateKey :: FilePath
 } deriving (Show)
@@ -41,15 +37,11 @@ data KeyFiles = KeyFiles {
 -- Parsers for CLI options
 
 connectionParser :: Parser Connection
-connectionParser = Connection <$> userParser <*> hostParser <*> portParser
+connectionParser = Connection <$> userParser <*> hostParser <*> portParser <*> publicKeyParser <*> privateKeyParser
   where
     userParser = strOption (long "user" <> help "Username")
     hostParser = strOption (long "host" <> help "Hostname")
     portParser = option auto (long "port" <> help "Port number" <> metavar "INT")
-
-keyFilesParser :: Parser KeyFiles
-keyFilesParser = KeyFiles <$> publicKeyParser <*> privateKeyParser
-  where
     publicKeyParser = strOption (long "publicKey" <> help "Public ssh key file path")
     privateKeyParser = strOption (long "privateKey" <> help "Private ssh key file path")
 
@@ -87,7 +79,7 @@ keyValuePairsOption = optional $ option keyValuePairsReader
   )
 
 options :: Parser Options
-options = Options <$> connectionParser <*> keyFilesParser <*> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption)
+options = Options <$> connectionParser <*> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption)
 
 -- Helper functions
 
@@ -164,7 +156,7 @@ runHpci opts = do
   putStrLn "Start Session"
 
   -- Authenticate (Leave passphrase as empty string)
-  publicKeyAuthFile session (user $ connectionInfo opts) (publicKey $ keys opts) (privateKey $ keys opts) ""
+  publicKeyAuthFile session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
   putStrLn "Authorised"
 
   -- Send a file to remote host via SCP.
