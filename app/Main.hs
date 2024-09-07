@@ -23,8 +23,13 @@ data Options = Options {
   connectionInfo :: Connection,
   script         :: FilePath,
   logFile        :: FilePath,
-  optConfig      :: KeyValuePairs
+  optConfig      :: KeyValuePairs,
+  optCommand     :: Command
 } deriving (Show)
+
+data Command
+  = Create String
+  | Delete deriving Show
 
 data Connection = Connection {
   user :: String,
@@ -35,6 +40,23 @@ data Connection = Connection {
 } deriving (Show)
 
 -- Parsers for CLI options
+commandParser :: Parser Command
+commandParser = hsubparser (createCommand <> deleteCommand)
+
+createCommand :: Mod CommandFields Command
+createCommand =
+    command
+        "create"
+        (info createOptions (progDesc "Create a thing"))
+createOptions :: Parser Command
+createOptions =
+    Create <$>
+    strArgument (metavar "NAME" <> help "Name of the thing to create")
+deleteCommand :: Mod CommandFields Command
+deleteCommand =
+    command
+        "delete"
+        (info (pure Delete) (progDesc "Delete the thing"))
 
 connectionParser :: Parser Connection
 connectionParser = Connection <$> userParser <*> hostParser <*> portParser <*> publicKeyParser <*> privateKeyParser
@@ -79,7 +101,7 @@ keyValuePairsOption = optional $ option keyValuePairsReader
   )
 
 options :: Parser Options
-options = Options <$> connectionParser <*> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption)
+options = Options <$> connectionParser <*> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption) <*> commandParser
 
 -- Helper functions
 
@@ -151,6 +173,9 @@ pollUntilFinished s jid = do
 
 runHpci :: Options -> IO ()
 runHpci opts = do
+  case optCommand opts of 
+    Create name -> putStrLn ("Created the thing named " ++ name)
+    Delete      -> putStrLn "Deleted the thing!"
   --  Initialize session
   session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
   putStrLn "Start Session"
