@@ -179,7 +179,24 @@ pollUntilFinished s jid = do
 runHpci :: Options -> IO ()
 runHpci opts = do
   case optCommand opts of 
-    Exec execStr  -> putStrLn ("Exec'd this command '" ++ execStr ++ "'")
+    Exec execStr  -> do
+      session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
+      putStrLn "Start Session"
+
+      -- Authenticate (Leave passphrase as empty string)
+      publicKeyAuthFile session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
+      putStrLn "Authorised"
+
+      -- Remove script from server
+      _ <- withChannel session $ \ch -> do
+             channelExecute ch execStr
+             result <- readAllChannel ch
+             BSL.putStr result
+
+      -- Close active session
+      sessionClose session
+      putStrLn "Closed Session"
+
     _             -> do
       session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
       putStrLn "Start Session"
