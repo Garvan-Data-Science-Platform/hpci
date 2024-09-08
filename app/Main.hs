@@ -21,15 +21,16 @@ import Network.SSH.Client.LibSSH2
 
 data Options = Options {
   connectionInfo :: Connection,
-  script         :: FilePath,
-  logFile        :: FilePath,
-  optConfig      :: KeyValuePairs,
   optCommand     :: Command
 } deriving (Show)
 
 data Command
-  = Create String
-  | Delete deriving Show
+  = Schedule {
+      script         :: FilePath,
+      logFile        :: FilePath,
+      optConfig      :: KeyValuePairs
+    }
+  | Exec deriving Show
 
 data Connection = Connection {
   user :: String,
@@ -41,22 +42,23 @@ data Connection = Connection {
 
 -- Parsers for CLI options
 commandParser :: Parser Command
-commandParser = hsubparser (createCommand <> deleteCommand)
+commandParser = hsubparser (scheduleCommand <> execCommand)
 
-createCommand :: Mod CommandFields Command
-createCommand =
+scheduleCommand :: Mod CommandFields Command
+scheduleCommand =
     command
-        "create"
-        (info createOptions (progDesc "Create a thing"))
-createOptions :: Parser Command
-createOptions =
-    Create <$>
-    strArgument (metavar "NAME" <> help "Name of the thing to create")
-deleteCommand :: Mod CommandFields Command
-deleteCommand =
+        "schedule"
+        (info scheduleOptions (progDesc "Schedule a job on HPC"))
+
+scheduleOptions :: Parser Command
+scheduleOptions =
+    Schedule <$> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption)
+
+execCommand :: Mod CommandFields Command
+execCommand =
     command
-        "delete"
-        (info (pure Delete) (progDesc "Delete the thing"))
+        "exec"
+        (info (pure Exec) (progDesc "Exec the thing"))
 
 connectionParser :: Parser Connection
 connectionParser = Connection <$> userParser <*> hostParser <*> portParser <*> publicKeyParser <*> privateKeyParser
@@ -101,7 +103,7 @@ keyValuePairsOption = optional $ option keyValuePairsReader
   )
 
 options :: Parser Options
-options = Options <$> connectionParser <*> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption) <*> commandParser
+options = Options <$> connectionParser <*> commandParser
 
 -- Helper functions
 
@@ -117,11 +119,11 @@ mapToString = intercalate "," . map (\(k, v) -> T.unpack k ++ "=" ++ T.unpack v)
 -- Construct the qsub command with options
 constructQsubCommand :: Options -> String
 constructQsubCommand opts =
-  let configString = mapToString (optConfig opts)
-      configArg = if not (Map.null (optConfig opts)) 
+  let configString = mapToString (optConfig $ optCommand opts)
+      configArg = if not (Map.null (optConfig $ optCommand opts)) 
                   then " -v " ++ configString 
                   else ""
-  in "qsub" ++ configArg ++ " " ++ takeFileName (script opts)
+  in "qsub" ++ configArg ++ " " ++ takeFileName (script $ optCommand opts)
 
 parseSubmissionResult :: (Int, BSL.ByteString) -> String
 parseSubmissionResult = BSL8.unpack . head . BSL8.split '.' . snd
@@ -174,65 +176,64 @@ pollUntilFinished s jid = do
 runHpci :: Options -> IO ()
 runHpci opts = do
   case optCommand opts of 
-    Create name -> putStrLn ("Created the thing named " ++ name)
-    Delete      -> putStrLn "Deleted the thing!"
-  --  Initialize session
-  session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
-  putStrLn "Start Session"
+    Exec          -> putStrLn "Exec'd the thing!"
+    _             -> do
+      session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
+      putStrLn "Start Session"
 
-  -- Authenticate (Leave passphrase as empty string)
-  publicKeyAuthFile session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
-  putStrLn "Authorised"
+      -- Authenticate (Leave passphrase as empty string)
+      publicKeyAuthFile session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
+      putStrLn "Authorised"
 
-  -- Send a file to remote host via SCP.
-  scriptSize <- scpSendFile session 0o644 (script opts) (takeFileName $ script opts)
-  putStrLn $ "Sent: " ++ script opts ++ " - "++ show scriptSize ++ " bytes."
+      -- Send a file to remote host via SCP.
+      scriptSize <- scpSendFile session 0o644 (script $ optCommand opts) (takeFileName $ (script $ optCommand opts))
+      putStrLn $ "Sent: " ++ (script $ optCommand opts) ++ " - "++ show scriptSize ++ " bytes."
 
-  -- Submit job using script file
-  putStrLn $ "Qsub command to run on server: " ++ constructQsubCommand opts
+      -- Submit job using script file
+      putStrLn $ "Qsub command to run on server: " ++ constructQsubCommand opts
 
-  submissionResult <- runCommand session (constructQsubCommand opts)
+      submissionResult <- runCommand session (constructQsubCommand opts)
 
-  let jobId = parseSubmissionResult submissionResult
+      let jobId = parseSubmissionResult submissionResult
 
-  putStrLn ("Job ID: " ++ jobId)
+      putStrLn ("Job ID: " ++ jobId)
 
-  -- Query job status
-  -- TODO: Add timeout?
-  pollUntilFinished session jobId
+      -- Query job status
+      -- TODO: Add timeout?
+      pollUntilFinished session jobId
 
-  -- Get exit status
-  exitStatus <- checkStatus session jobId "Exit_status"
+      -- Get exit status
+      exitStatus <- checkStatus session jobId "Exit_status"
 
-  -- Copy logs file off server to ci
-  logSize <- scpReceiveFile session (logFile opts) (logFile opts)
-  putStrLn $ "Received: " ++ logFile opts ++ " - " ++ show logSize ++ " bytes."
+      -- Copy logs file off server to ci
+      logSize <- scpReceiveFile session (logFile $ optCommand opts) (logFile $ optCommand opts)
+      putStrLn $ "Received: " ++ (logFile $ optCommand opts) ++ " - " ++ show logSize ++ " bytes."
 
-  -- Remove script from server
-  _ <- withChannel session $ \ch -> do
-         channelExecute ch ("rm " ++ script opts)
-         result <- readAllChannel ch
-         BSL.putStr result
+      -- Remove script from server
+      _ <- withChannel session $ \ch -> do
+             channelExecute ch ("rm " ++ (script $ optCommand opts))
+             result <- readAllChannel ch
+             BSL.putStr result
 
-  -- Close active session
-  sessionClose session
-  putStrLn "Closed Session"
+      -- Close active session
+      sessionClose session
+      putStrLn "Closed Session"
 
-  -- Print logs file
-  contents <- readFile $ logFile opts
-  putStrLn "Contents of log file:"
-  putStr contents
+      -- Print logs file
+      contents <- readFile $ (logFile $ optCommand opts)
+      putStrLn "Contents of log file:"
+      putStr contents
 
-  -- Exit with the same exit status of the HPC job (this gives us a nice CI error)
-  case exitStatus of
-    Left err -> putStrLn $ "WARNING: " ++ err
-    Right s  -> do
-      let exitCode = T.unpack s
-      case exitCode of
-        "0" ->  putStrLn $ "Job Exit Status: " ++ exitCode
-        _   ->  do
-          putStrLn $ "Job Exit Status: " ++ exitCode
-          exitWith (ExitFailure $ read exitCode)
+      -- Exit with the same exit status of the HPC job (this gives us a nice CI error)
+      case exitStatus of
+        Left err -> putStrLn $ "WARNING: " ++ err
+        Right s  -> do
+          let exitCode = T.unpack s
+          case exitCode of
+            "0" ->  putStrLn $ "Job Exit Status: " ++ exitCode
+            _   ->  do
+              putStrLn $ "Job Exit Status: " ++ exitCode
+              exitWith (ExitFailure $ read exitCode)
 
 main :: IO()
 main = do
