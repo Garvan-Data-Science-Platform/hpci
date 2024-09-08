@@ -30,7 +30,7 @@ data Command
       logFile        :: FilePath,
       optConfig      :: KeyValuePairs
     }
-  | Exec deriving Show
+  | Exec String deriving Show
 
 data Connection = Connection {
   user :: String,
@@ -58,7 +58,10 @@ execCommand :: Mod CommandFields Command
 execCommand =
     command
         "exec"
-        (info (pure Exec) (progDesc "Exec the thing"))
+        (info execOptions (progDesc "Exec the thing"))
+
+execOptions :: Parser Command
+execOptions = Exec <$> strArgument (metavar "EXEC_COMMAND" <> help "Command to execute on HPC")
 
 connectionParser :: Parser Connection
 connectionParser = Connection <$> userParser <*> hostParser <*> portParser <*> publicKeyParser <*> privateKeyParser
@@ -176,7 +179,7 @@ pollUntilFinished s jid = do
 runHpci :: Options -> IO ()
 runHpci opts = do
   case optCommand opts of 
-    Exec          -> putStrLn "Exec'd the thing!"
+    Exec execStr  -> putStrLn ("Exec'd this command '" ++ execStr ++ "'")
     _             -> do
       session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
       putStrLn "Start Session"
