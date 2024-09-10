@@ -184,11 +184,9 @@ runHpci opts = do
   case optCommand opts of 
     Exec execStr  -> do
       session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
-      putStrLn "Start Session"
 
       -- Authenticate (Leave passphrase as empty string)
       publicKeyAuthFile session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
-      putStrLn "Authorised"
 
       -- Run exec command
       execResult <- runCommand session (execStr ++ " 2>&1")
