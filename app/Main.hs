@@ -131,6 +131,9 @@ constructQsubCommand opts =
 parseSubmissionResult :: (Int, BSL.ByteString) -> String
 parseSubmissionResult = BSL8.unpack . head . BSL8.split '.' . snd
 
+parseExecResult :: (Int, BSL.ByteString) -> (Int, String)
+parseExecResult (i, bs) = (i, BSL8.unpack bs)
+
 -- Parses a field from typical `qstat -xf` response (example below)
 --
 --   ```
@@ -187,15 +190,19 @@ runHpci opts = do
       publicKeyAuthFile session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
       putStrLn "Authorised"
 
-      -- Remove script from server
-      _ <- withChannel session $ \ch -> do
-             channelExecute ch execStr
-             result <- readAllChannel ch
-             BSL.putStr result
+      -- Run exec command
+      execResult <- runCommand session (execStr ++ " 2>&1")
+      let (exitCode, execOutput) = parseExecResult execResult
+      putStrLn execOutput
 
       -- Close active session
       sessionClose session
-      putStrLn "Closed Session"
+
+      case exitCode of
+        0 ->  exitSuccess
+        _   ->  do
+          putStrLn $ "Job Exit Status: " ++ (show $ exitCode)
+          exitWith (ExitFailure exitCode)
 
     _             -> do
       session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
@@ -212,7 +219,7 @@ runHpci opts = do
       -- Submit job using script file
       putStrLn $ "Qsub command to run on server: " ++ constructQsubCommand opts
 
-      submissionResult <- runCommand session (constructQsubCommand opts)
+      submissionResult <- runCommand session ((constructQsubCommand opts) ++ " 2>&1")
 
       let jobId = parseSubmissionResult submissionResult
 
