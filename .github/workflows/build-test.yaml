@@ -81,7 +81,7 @@ jobs:
       - name: Run test
         run: |
           make test-bin
-          false && make EXEC_COMMAND=pwdd test-bin-exec
+          ! make EXEC_COMMAND=pwdd test-bin-exec
 
       - name: Clean up
         run: |
