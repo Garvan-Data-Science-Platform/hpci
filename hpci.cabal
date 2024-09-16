@@ -31,10 +31,14 @@ common common-options
 library
   import:          common-options
   hs-source-dirs:  src
-  exposed-modules: Lib
+  exposed-modules: Exec, Cli, Helpers
   build-depends:
     , containers
     , mtl
+    , bytestring
+    , libssh2
+    , optparse-applicative
+    , text
 
 executable hpci-exe
   import:         common-options
