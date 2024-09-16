@@ -3,6 +3,24 @@ REGION:=australia-southeast1
 REGISTRY:=$(REGION)-docker.pkg.dev/$(PROJECT)/docker/
 IMAGE:=pbs
 DOCKER_TAG:=$(REGISTRY)$(IMAGE):latest
+EXEC_COMMAND:=pwd
+
+SCHEDULE_ARGS=--user pbsuser \
+			  --host 127.0.0.1 \
+			  --port 2222 \
+			  --publicKey test_key.pub \
+			  --privateKey test_key \
+			  schedule \
+			  --script ci/test_job.pbs \
+			  --logFile test_job.log \
+			  -c TEST_VAR1=success,TEST_VAR2=double_success
+
+EXEC_ARGS=--user pbsuser \
+			--host 127.0.0.1 \
+			--port 2222 \
+			--publicKey test_key.pub \
+			--privateKey test_key \
+			exec $(EXEC_COMMAND)
 
 .PHONY: docker
 docker: ## Build a docker image. Only works on x86_64-linux. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah docker`).
@@ -29,28 +47,26 @@ interact: ## Start interactive terminal access to running docker container
 	docker exec -it --user pbsuser $(IMAGE) bash
 
 .PHONY: test
-test: ## Compile HPCI and test with dockerised OpenPBS (requires `make run` first)
-	cabal run exes -- \
-		--user pbsuser \
-		--host 127.0.0.1 \
-		--port 2222 \
-		--publicKey test_key.pub \
-		--privateKey test_key \
-		--script ci/test_job.pbs \
-		--logFile test_job.log \
-		-c TEST_VAR1=success,TEST_VAR2=double_success
+test: test-schedule test-exec # Run cabal tests
+
+.PHONY: test
+test-schedule: ## Compile HPCI and test the schedule command with dockerised OpenPBS (requires `make run` first)
+	cabal run exes -- $(SCHEDULE_ARGS)
+
+.PHONY: test-exec
+test-exec: ## Compile HPCI and test the exec command with dockerised OpenPBS (requires `make run` first)
+	cabal run exes -- $(EXEC_ARGS)
 
 .PHONY: test-bin
-test-bin: ## Test HPCI binary and test with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
-	result/bin/hpci-exe \
-		--user pbsuser \
-		--host localhost \
-		--port 2222 \
-		--publicKey test_key.pub \
-		--privateKey test_key \
-		--script ci/test_job.pbs \
-		--logFile test_job.log \
-		-c TEST_VAR1=success,TEST_VAR2=double_success
+test-bin: test-bin-schedule test-bin-exec # Run tests on binary
+
+.PHONY: test-bin-schedule
+test-bin-schedule: ## Test HPCI binary and test schedule command with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
+	result/bin/hpci-exe $(SCHEDULE_ARGS)
+
+.PHONY: test-bin-exec
+test-bin-exec: ## Test HPCI binary and test exec command with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
+	result/bin/hpci-exe $(EXEC_ARGS)
 
 .PHONY: push-bin
 push-bin: ## Push binary to gcp artifact registry

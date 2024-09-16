@@ -80,15 +80,8 @@ jobs:
 
       - name: Run test
         run: |
-          result/bin/hpci-exe \
-            --user pbsuser \
-            --host localhost \
-            --port 2222 \
-            --publicKey test_key.pub \
-            --privateKey test_key \
-            --script ci/test_job.pbs \
-            --logFile test_job.log \
-            -c TEST_VAR1=success,TEST_VAR2=double_success
+          make test-bin
+          ! make EXEC_COMMAND=pwdd test-bin-exec
 
       - name: Clean up
         run: |
