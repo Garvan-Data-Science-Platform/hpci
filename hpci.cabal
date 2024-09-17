@@ -31,11 +31,12 @@ common common-options
 library
   import:          common-options
   hs-source-dirs:  src
-  exposed-modules: Exec, Cli, Helpers
+  exposed-modules: Exec, Cli, Helpers, Schedule
   build-depends:
     , containers
     , mtl
     , bytestring
+    , filepath
     , libssh2
     , optparse-applicative
     , text
@@ -46,12 +47,6 @@ executable hpci-exe
   main-is:        Main.hs
   build-depends:
     , hpci
-    , bytestring
-    , filepath
-    , libssh2
-    , optparse-applicative
-    , containers
-    , text
     
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
 
