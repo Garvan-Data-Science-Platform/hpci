@@ -112,5 +112,5 @@ parseOptions = execParser opts
   where
     opts = info (options <**> helper)
       ( fullDesc
-      <> progDesc "HPC in CI"
-      <> header "Transfer files and execute commands on HPC via ssh" )
+      <> progDesc "Integrate HPC with CI"
+      <> header "Schedule jobs and execute commands on HPC via CI" )
