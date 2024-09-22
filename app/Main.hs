@@ -7,7 +7,7 @@ runHpci opts = do
   case optCommand opts of 
     Exec execStr -> runExec opts execStr
 
-    _    -> runSchedule opts
+    _            -> runSchedule opts
 
 main :: IO()
 main = do
