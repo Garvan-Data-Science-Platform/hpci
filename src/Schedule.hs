@@ -65,15 +65,18 @@ checkStatus s jid keyOfInterest = do
     Right (_,v) -> return $ Right v
     Left err    -> return $ Left err
 
-pollUntilFinished :: Session -> String -> IO ()
-pollUntilFinished s jid = do
+pollUntilFinished :: Options -> String -> Int -> IO ()
+pollUntilFinished opts jid interval = do
+  s <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
+  publicKeyAuthFile s (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
   r <- checkStatus s jid "job_state"
+  sessionClose s
   case r of
     Right "F" -> putStrLn ("Job " ++ jid ++ ": Finished")
     Right status -> do
       putStrLn ("Job status: " ++ T.unpack status)
-      threadDelay 2000000
-      pollUntilFinished s jid
+      threadDelay interval
+      pollUntilFinished opts jid interval
     Left err -> putStrLn ("Error: " ++ err)
 
 -- TODO: error handling for IO and parsing job id; parse status of job
@@ -94,21 +97,26 @@ runSchedule opts = do
     submissionResult <- runCommand session ((constructQsubCommand opts) ++ " 2>&1")
     let jobId = parseSubmissionResult submissionResult
     putStrLn ("Job ID: " ++ jobId)
+
+    sessionClose session
     -- Query job status
     -- TODO: Add timeout?
-    pollUntilFinished session jobId
+    pollUntilFinished opts jobId 20000000
+
     -- Get exit status
-    exitStatus <- checkStatus session jobId "Exit_status"
+    wrap_up_session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
+    publicKeyAuthFile wrap_up_session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
+    exitStatus <- checkStatus wrap_up_session jobId "Exit_status"
     -- Copy logs file off server to ci
-    logSize <- scpReceiveFile session (logFile $ optCommand opts) (logFile $ optCommand opts)
+    logSize <- scpReceiveFile wrap_up_session (logFile $ optCommand opts) (logFile $ optCommand opts)
     putStrLn $ "Received: " ++ (logFile $ optCommand opts) ++ " - " ++ show logSize ++ " bytes."
     -- Remove script from server
-    _ <- withChannel session $ \ch -> do
+    _ <- withChannel wrap_up_session $ \ch -> do
            channelExecute ch ("rm " ++ (script $ optCommand opts))
            result <- readAllChannel ch
            BSL.putStr result
     -- Close active session
-    sessionClose session
+    sessionClose wrap_up_session
     putStrLn "Closed Session"
     -- Print logs file
     contents <- readFile $ (logFile $ optCommand opts)
