@@ -30,6 +30,22 @@ docker: ## Build a docker image. Only works on x86_64-linux. Provide PROJECT arg
 pull: ## Pull a docker image from artifact registry (useful on non-x86_64 machines. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah pull`).
 	docker pull --platform linux/amd64 $(DOCKER_TAG)
 
+.PHONY: docker-slurm
+docker-slurm: ## Build a slurm docker image. Only works on x86_64-linux. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah docker`).
+	docker build -t slurm-test ci/slurm
+
+.PHONY: run-slurm
+run-slurm: ## Start a OpenPBS server and ssh server inside docker container (This requires creating an ssh key called `test_key` in the root of the `hpci` directory). Provide PROJECT argument on commandline (e.g. `make PROJECT=blah run`).
+	docker run \
+	--platform linux/amd64 \
+	-d \
+	--rm \
+	-p 2223:22 \
+	--name slurm \
+	-h slurm_container \
+	-v ./test_key.pub:/tmp/authorized_keys:ro \
+	slurm-test
+
 .PHONY: run
 run: ## Start a OpenPBS server and ssh server inside docker container (This requires creating an ssh key called `test_key` in the root of the `hpci` directory). Provide PROJECT argument on commandline (e.g. `make PROJECT=blah run`).
 	docker run \
@@ -45,6 +61,10 @@ run: ## Start a OpenPBS server and ssh server inside docker container (This requ
 .PHONY: interact
 interact: ## Start interactive terminal access to running docker container
 	docker exec -it --user pbsuser $(IMAGE) bash
+
+.PHONY: interact-slurm
+interact-slurm: ## Start interactive terminal access to running docker container
+	docker exec -it --user hpci-user slurm bash
 
 .PHONY: test
 test: test-schedule test-exec # Run cabal tests
