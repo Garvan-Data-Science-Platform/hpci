@@ -68,17 +68,21 @@ test-bin-schedule: ## Test HPCI binary and test schedule command with dockerised
 test-bin-exec: ## Test HPCI binary and test exec command with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
 	result/bin/hpci-exe $(EXEC_ARGS)
 
+.PHONY: build
+build: ## Build fully-static binary on linux x86_64
+	nix build .#packages.x86_64-linux.hpci
+
 .PHONY: push-bin
-push-bin: ## Push binary to gcp artifact registry
+push-bin: ## Push binary to gcp artifact registry - requires VERSION
 	gcloud artifacts generic upload \
 		--location=australia-southeast1 \
 		--source=result/bin/hpci-exe \
 		--package=hpci \
-		--version=0.0.1 \
+		--version=$(VERSION) \
 		--repository=generic
 
 .PHONY: delete-bin
-delete-bin: ## Delete binary from gcp artifact registry
+delete-bin: ## Delete binary from gcp artifact registry - requires VERSION
 	gcloud artifacts versions delete $(VERSION)\
 		--location=australia-southeast1 \
 		--package=hpci \
