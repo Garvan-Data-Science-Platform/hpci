@@ -1,6 +1,6 @@
 # hpci
-[![hpci on hackage](https://img.shields.io/hackage/v/hpci)](http://hackage.haskell.org/package/hpci)
-[![hpci on Stackage Nightly](https://stackage.org/package/hpci/badge/nightly)](https://stackage.org/nightly/package/hpci)
+
+## NOTE: THIS SOFTWARE IS STILL IN DEVELOPMENT AND IS NOT PRODUCTION READY.
 
 Generated with [template-haskell](https://github.com/jonascarpay/template-haskell)
 
@@ -37,10 +37,19 @@ To compile and run the program, use `cabal run exes --` followed by the followin
   - --port       *port declaration - typically 22*
   - --publickey  *local filepath for ssh public key*
   - --privatekey *local filepath for ssh private key*
+  schedule       *to schedule a job on HPC* 
   - --script     *local filepath of `.pbs` script to accomany the `qsub` command*
   - --logFile    *remote filepath of logfile produced by `.pbs` script to copy back to local system*
   - -c           ***Optional*** *Configuration in the form of `KEY1=VALUE1,KEY2=VALUE2` that is passed to `qsub` when submitting the job*
 
+  OR 
+
+  - --user       *username on remote system*
+  - --host       *IP address or domain name or remote host*
+  - --port       *port declaration - typically 22*
+  - --publickey  *local filepath for ssh public key*
+  - --privatekey *local filepath for ssh private key*
+  exec "command" *to run a command on HPC* 
 
 ## Testing in CI
 
