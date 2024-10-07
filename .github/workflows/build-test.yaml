@@ -33,7 +33,7 @@ jobs:
         with:
           create_credentials_file: "true"
           service_account: "grunner-ci-sa@${{secrets.PROJECT_ID}}.iam.gserviceaccount.com"
-          workload_identity_provider: "projects/${{secrets.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/${{secrets.PROJECT_ID}}-workload-id-pool/providers/github-provider"
+          workload_identity_provider: "projects/${{secrets.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/hpci-workload-identity-pool/providers/github-provider"
 
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@v2

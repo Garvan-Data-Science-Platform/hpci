@@ -108,8 +108,8 @@ runSchedule opts = do
     publicKeyAuthFile wrap_up_session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
     exitStatus <- checkStatus wrap_up_session jobId "Exit_status"
     -- Copy logs file off server to ci
-    logSize <- scpReceiveFile wrap_up_session (logFile $ optCommand opts) (logFile $ optCommand opts)
-    putStrLn $ "Received: " ++ (logFile $ optCommand opts) ++ " - " ++ show logSize ++ " bytes."
+    logSize <- scpReceiveFile wrap_up_session (logFile $ optCommand opts) (takeFileName $ logFile $ optCommand opts)
+    putStrLn $ "Received: " ++ (takeFileName $ logFile $ optCommand opts) ++ " - " ++ show logSize ++ " bytes."
     -- Remove script from server
     _ <- withChannel wrap_up_session $ \ch -> do
            channelExecute ch ("rm " ++ (script $ optCommand opts))
@@ -119,7 +119,7 @@ runSchedule opts = do
     sessionClose wrap_up_session
     putStrLn "Closed Session"
     -- Print logs file
-    contents <- readFile $ (logFile $ optCommand opts)
+    contents <- readFile $ (takeFileName $ logFile $ optCommand opts)
     putStrLn "Contents of log file:"
     putStr contents
     -- Exit with the same exit status of the HPC job (this gives us a nice CI error)
