@@ -1,24 +1,24 @@
 cabal-version:   2.4
 name:            hpci
-version:         0
+version:         0.0.3
 license:         GPL-3.0-or-later
 build-type:      Simple
 license-file:    LICENSE
 author:          ignatiusm
 maintainer:      ignatiusm <i.menzies@garvan.org.au>
-copyright:       2024 ignatiusm
-tested-with:     GHC ==8.6.5 || ==8.8.3 || ==8.10.7 || ==9.0.2 || ==9.2.2
+copyright:       2024 Garvan Institute for Medical Research
+tested-with:     GHC ==9.4.8
 extra-doc-files:
   CHANGELOG.md
   README.md
 
 -- category:
--- description:     description
--- synopsis:        one-line synopsis
--- homepage:        https://github.com/FIXME/hpci#readme
+-- description:     Tool to run and schedule jobs on HPC from CI
+-- synopsis:        Run command or schedule job on HPC, poll scheduler and exit with same exit code as job on HPC.
+-- homepage:        https://github.com/Garvan-Data-Science-Platform/hpci#readme
 -- source-repository head
 --   type:     git
---   location: git://github.com/FIXME/hpci.git
+--   location: git://github.com/Garvan-Data-Science-Platform/hpci.git
 
 common common-options
   build-depends:    base >=4.9 && <5
