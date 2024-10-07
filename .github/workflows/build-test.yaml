@@ -4,12 +4,12 @@ on:
     paths-ignore:
       - "ci/**"
       - ".github/workflows/build-pbs.yml"
+    tags:
+      - "v*"
   pull_request:
     paths-ignore:
       - "ci/**"
       - ".github/workflows/build-pbs.yml"
-  tags:
-    - "v*"
 
 env:
   LOCATION: australia-southeast1
