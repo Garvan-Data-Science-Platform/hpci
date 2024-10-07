@@ -89,11 +89,9 @@ jobs:
 
       - name: Upload binary to release
         if: startsWith(github.ref, 'refs/tags/v') # Only run if a tag with 'v*' is pushed
-        uses: ncipollo/release-action@v1.14
+        uses: ncipollo/release-action@v1
         with:
-          artifacts: "result/bin/*"
-          tag: ${{ github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "result/bin/hpci-exe"
 
       - name: Clean up
         run: |
