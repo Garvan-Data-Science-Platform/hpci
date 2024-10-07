@@ -4,6 +4,8 @@ on:
     paths-ignore:
       - "ci/**"
       - ".github/workflows/build-pbs.yml"
+    branches:
+      - "**"
     tags:
       - "v*"
   pull_request:
