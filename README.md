@@ -1,8 +1,21 @@
 # hpci
 
-## NOTE: THIS SOFTWARE IS STILL IN DEVELOPMENT AND IS NOT PRODUCTION READY.
+> *You can't spell reprodu***ci***bility without CI*
+
+`hpci` is a tool to integrate Continuous Integration (CI) with High Performance Compute (HPC).
+
+Install `hpci` on your CI runner, and `hpci` can schedule and monitor jobs on HPC.
+When a job has finished, the job's exit status code is recorded.
+
+`hpci` will copy log files from HPC to the CI runner, print these to the CI logs.
+Then `hpci` will exit will the same exit status code as the job on HPC, therefore CI will crash if the job on HPC fails.
 
 Generated with [template-haskell](https://github.com/jonascarpay/template-haskell)
+
+## How to use `hpci`
+
+Documentation is still being developed.
+Contact the maintainer (email details in the `hpci.cabal` file) if you are interested in using `hpci`.
 
 ## Development environment
 
