@@ -10,8 +10,13 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Map.Strict as Map
-import Network.SSH.Client.LibSSH2.Foreign
-import Network.SSH.Client.LibSSH2
+import Network.SSH.Client.LibSSH2 (
+  Session
+  , sessionClose
+  , readAllChannel
+  , withChannel)
+import Network.SSH.Client.LibSSH2.Foreign (
+  channelExecute)
 import System.Exit
 import System.FilePath
 
@@ -29,7 +34,8 @@ constructQsubCommand opts =
       configArg = if not (Map.null (optConfig $ optCommand opts)) 
                   then " -v " ++ configString 
                   else ""
-  in "qsub" ++ configArg ++ " " ++ takeFileName (script $ optCommand opts)
+      (Script scriptPath) = script $ optCommand opts
+  in "qsub" ++ configArg ++ " " ++ takeFileName scriptPath
 
 parseSubmissionResult :: (Int, BSL.ByteString) -> String
 parseSubmissionResult = BSL8.unpack . head . BSL8.split '.' . snd
@@ -67,8 +73,8 @@ checkStatus s jid keyOfInterest = do
 
 pollUntilFinished :: Options -> String -> Int -> IO ()
 pollUntilFinished opts jid interval = do
-  s <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
-  publicKeyAuthFile s (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
+  s <- safeSessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
+  safePublicKeyAuthFile s (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts)
   r <- checkStatus s jid "job_state"
   sessionClose s
   case r of
@@ -84,14 +90,22 @@ pollUntilFinished opts jid interval = do
 
 runSchedule :: Options -> IO()
 runSchedule opts = do
-    session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
+    let connInfo                  = connectionInfo opts
+        cmdOpts                   = optCommand opts
+
+    session <- safeSessionInit (host connInfo) (port connInfo)
     putStrLn "Start Session"
+
     -- Authenticate (Leave passphrase as empty string)
-    publicKeyAuthFile session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
+    safePublicKeyAuthFile session (user connInfo) (publicKey connInfo) (privateKey connInfo)
     putStrLn "Authorised"
+
     -- Send a file to remote host via SCP.
-    scriptSize <- scpSendFile session 0o644 (script $ optCommand opts) (takeFileName $ (script $ optCommand opts))
-    putStrLn $ "Sent: " ++ (script $ optCommand opts) ++ " - "++ show scriptSize ++ " bytes."
+    scriptSize <- safeScpSendFile session (script cmdOpts)
+
+    putStrLn $ "Sent: " ++ (show $ script cmdOpts) ++ " - "++ show scriptSize ++ " bytes."
+    -- TODO add zero script size check
+
     -- Submit job using script file
     putStrLn $ "Qsub command to run on server: " ++ constructQsubCommand opts
     submissionResult <- runCommand session ((constructQsubCommand opts) ++ " 2>&1")
@@ -101,25 +115,28 @@ runSchedule opts = do
     sessionClose session
     -- Query job status
     -- TODO: Add timeout?
+    -- TODO: add user defined poll interval with default
     pollUntilFinished opts jobId 20000000
 
     -- Get exit status
-    wrap_up_session <- sessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
-    publicKeyAuthFile wrap_up_session (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts) ""
+    wrap_up_session <- safeSessionInit (host connInfo) (port connInfo)
+    safePublicKeyAuthFile wrap_up_session (user connInfo) (publicKey connInfo) (privateKey connInfo)
+
     exitStatus <- checkStatus wrap_up_session jobId "Exit_status"
     -- Copy logs file off server to ci
-    logSize <- scpReceiveFile wrap_up_session (logFile $ optCommand opts) (takeFileName $ logFile $ optCommand opts)
-    putStrLn $ "Received: " ++ (takeFileName $ logFile $ optCommand opts) ++ " - " ++ show logSize ++ " bytes."
+    logSize <- safeScpReceiveFile wrap_up_session (logFile cmdOpts)
+    let (LogFile logPath) = logFile cmdOpts
+    putStrLn $ "Received: " ++ (takeFileName logPath) ++ " - " ++ show logSize ++ " bytes."
     -- Remove script from server
     _ <- withChannel wrap_up_session $ \ch -> do
-           channelExecute ch ("rm " ++ (script $ optCommand opts))
+           channelExecute ch ("rm " ++ (show $ script cmdOpts))
            result <- readAllChannel ch
            BSL.putStr result
     -- Close active session
     sessionClose wrap_up_session
     putStrLn "Closed Session"
     -- Print logs file
-    contents <- readFile $ (takeFileName $ logFile $ optCommand opts)
+    contents <- readFile $ takeFileName logPath
     putStrLn "Contents of log file:"
     putStr contents
     -- Exit with the same exit status of the HPC job (this gives us a nice CI error)

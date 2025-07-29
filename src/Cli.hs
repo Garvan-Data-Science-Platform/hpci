@@ -1,9 +1,16 @@
 module Cli (
-  Options(..),
-  Command(..),
-  Connection(..),
-  parseOptions,
-  parsePair
+  Options(..)
+  , Command(..)
+  , Connection(..)
+  , User(..)
+  , Host(..)
+  , Port(..)
+  , PublicKey(..)
+  , PrivateKey(..)
+  , Script(..)
+  , LogFile(..)
+  , parseOptions
+  , parsePair
   ) where
 
 
@@ -14,6 +21,15 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe)
 import Options.Applicative
 
+-- Types to avoid using primitives
+newtype User = User String deriving (Show)
+newtype Host = Host String deriving (Show)
+newtype Port = Port Int deriving (Show)
+newtype PublicKey = PublicKey FilePath deriving (Show)
+newtype PrivateKey = PrivateKey FilePath deriving (Show)
+newtype Script = Script FilePath deriving (Show)
+newtype LogFile = LogFile FilePath deriving (Show)
+
 -- Data types for CLI options
 
 data Options = Options {
@@ -23,18 +39,17 @@ data Options = Options {
 
 data Command
   = Schedule {
-      script         :: FilePath,
-      logFile        :: FilePath,
-      optConfig      :: KeyValuePairs
-    }
+      script         :: Script,
+      logFile        :: LogFile,
+      optConfig      :: KeyValuePairs }
   | Exec String deriving Show
 
 data Connection = Connection {
-  user :: String,
-  host :: String,
-  port     :: Int,
-  publicKey  :: FilePath,
-  privateKey :: FilePath
+  user       :: User,
+  host       :: Host,
+  port       :: Port,
+  publicKey  :: PublicKey,
+  privateKey :: PrivateKey
 } deriving (Show)
 
 -- Parsers for CLI options
@@ -63,17 +78,17 @@ execOptions = Exec <$> strArgument (metavar "EXEC_COMMAND" <> help "Command to e
 connectionParser :: Parser Connection
 connectionParser = Connection <$> userParser <*> hostParser <*> portParser <*> publicKeyParser <*> privateKeyParser
   where
-    userParser = strOption (long "user" <> help "Username")
-    hostParser = strOption (long "host" <> help "Hostname")
-    portParser = option auto (long "port" <> help "Port number" <> metavar "INT")
-    publicKeyParser = strOption (long "publicKey" <> help "Public ssh key file path")
-    privateKeyParser = strOption (long "privateKey" <> help "Private ssh key file path")
+    userParser = User <$> strOption (long "user" <> help "Username")
+    hostParser = Host <$> strOption (long "host" <> help "Hostname")
+    portParser = Port <$> option auto (long "port" <> help "Port number" <> metavar "INT")
+    publicKeyParser = PublicKey <$> strOption (long "publicKey" <> help "Public ssh key file path")
+    privateKeyParser = PrivateKey <$> strOption (long "privateKey" <> help "Private ssh key file path")
 
-scriptParser :: Parser FilePath
-scriptParser = strOption (long "script")
+scriptParser :: Parser Script
+scriptParser = Script <$> strOption (long "script")
 
-logFileParser :: Parser FilePath
-logFileParser = strOption (long "logFile")
+logFileParser :: Parser LogFile
+logFileParser = LogFile <$> strOption (long "logFile")
 
 type KeyValuePairs = Map Text Text
 
