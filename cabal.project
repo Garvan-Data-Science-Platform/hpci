@@ -3,3 +3,5 @@ packages:
 
 package hpci
   tests: True
+
+test-options: -e
