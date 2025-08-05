@@ -29,6 +29,8 @@
             pkgs.haskell.lib.overrideCabal mypackage (old: {
               enableSharedExecutables = false;
               enableSharedLibraries = false;
+              doCheck = true;
+              testTarget = "--test-options=-e";
               configureFlags = [
                 "--ghc-option=-optl=-static"
                 "--ghc-option=-optl=-L${pkgs.zlib.static}/lib"
