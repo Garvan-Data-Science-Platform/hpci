@@ -7,5 +7,5 @@ import Test.Tasty.Program
 
 main :: IO ()
 main = defaultMain $ testGroup "Test with dockerised OpenPBS" $ [
-    testProgram "hpci" "make" ["test-schedule"] Nothing
+    testProgram "hpci" "make" ["test-bin-schedule"] Nothing
   ]
