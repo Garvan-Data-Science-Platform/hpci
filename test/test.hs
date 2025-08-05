@@ -5,7 +5,25 @@ module Main (
 import Test.Tasty
 import Test.Tasty.Program
 
+import Paths_hpci (getBinDir)
+import System.FilePath ((</>))
+
+tests :: FilePath -> TestTree
+tests executablePath =
+  testGroup "HPCI Integration Tests"
+    [
+      testProgram
+        "Test with dockerised OpenPBS"
+        "make"
+        [ "HPCI_EXE=" <> executablePath
+        , "test-schedule"
+        ]
+        Nothing
+    ]
+
 main :: IO ()
-main = defaultMain $ testGroup "Test with dockerised OpenPBS" $ [
-    testProgram "hpci" "make" ["test-bin-schedule"] Nothing
-  ]
+main = do
+  binDir <- getBinDir
+  let exePath = binDir </> "hpci-exe"
+
+  defaultMain (tests exePath)

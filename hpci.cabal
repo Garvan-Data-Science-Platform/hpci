@@ -55,7 +55,9 @@ test-suite hpci-test
   type:           exitcode-stdio-1.0
   hs-source-dirs: test
   main-is:        test.hs
+  other-modules:    Paths_hpci
   build-depends:
+    , filepath
     , hspec
     , HUnit
     , hpci
@@ -75,4 +77,4 @@ benchmark hpci-bench
     , criterion
     , hpci
 
-  ghc-options:    -threaded -rtsopts -with-rtsopts=-N
+ ghc-options:    -threaded -rtsopts -with-rtsopts=-N
