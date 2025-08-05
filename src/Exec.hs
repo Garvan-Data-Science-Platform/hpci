@@ -3,23 +3,25 @@ module Exec (runExec) where
 -- TODO: add helpers iwth run command
 -- import Helpers
 
+import Data.Text (Text)
+import qualified Data.Text as T
 import Network.SSH.Client.LibSSH2
 import System.Exit
 
 import Cli
 import Helpers
 
-runExec :: Options -> String -> IO()
+runExec :: Options -> Text -> IO()
 runExec opts execStr = do
     let connInfo                  = connectionInfo opts
 
-    session <- safeSessionInit (host connInfo) (port connInfo)
+    session <- sessionInit' (host connInfo) (port connInfo)
 
     -- Authenticate (Leave passphrase as empty string)
-    safePublicKeyAuthFile session (user connInfo) (publicKey connInfo) (privateKey connInfo)
+    publicKeyAuthFile' session (user connInfo) (publicKey connInfo) (privateKey connInfo)
 
     -- Run exec command
-    execResult <- runCommand session (execStr ++ " 2>&1")
+    execResult <- runCommand session (T.unpack execStr <> " 2>&1")
     let (exitCode, execOutput) = parseExecResult execResult
     putStrLn execOutput
 
@@ -29,5 +31,5 @@ runExec opts execStr = do
     case exitCode of
       0 ->  exitSuccess
       _   ->  do
-        putStrLn $ "Job Exit Status: " ++ (show $ exitCode)
+        putStrLn $ "Job Exit Status: " <> show exitCode
         exitWith (ExitFailure exitCode)

@@ -25,14 +25,14 @@ import Helpers
 
 -- Convert the map to a string of key-value pairs
 mapToString :: Map.Map Text Text -> String
-mapToString = intercalate "," . map (\(k, v) -> T.unpack k ++ "=" ++ T.unpack v) . Map.toList
+mapToString = intercalate "," . fmap (\(k, v) -> T.unpack k <> "=" <> T.unpack v) . Map.toList
 
 -- Construct the qsub command with options
 constructQsubCommand :: Options -> String
 constructQsubCommand opts =
   let configString = mapToString (optConfig $ optCommand opts)
       configArg = if not (Map.null (optConfig $ optCommand opts)) 
-                  then " -v " ++ configString 
+                  then " -v " <> configString 
                   else ""
       (Script scriptPath) = script $ optCommand opts
   in "qsub" ++ configArg ++ " " ++ takeFileName scriptPath
@@ -73,8 +73,8 @@ checkStatus s jid keyOfInterest = do
 
 pollUntilFinished :: Options -> String -> Int -> IO ()
 pollUntilFinished opts jid interval = do
-  s <- safeSessionInit (host $ connectionInfo opts) (port $ connectionInfo opts)
-  safePublicKeyAuthFile s (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts)
+  s <- sessionInit' (host $ connectionInfo opts) (port $ connectionInfo opts)
+  publicKeyAuthFile' s (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts)
   r <- checkStatus s jid "job_state"
   sessionClose s
   case r of
@@ -93,15 +93,15 @@ runSchedule opts = do
     let connInfo                  = connectionInfo opts
         cmdOpts                   = optCommand opts
 
-    session <- safeSessionInit (host connInfo) (port connInfo)
+    session <- sessionInit' (host connInfo) (port connInfo)
     putStrLn "Start Session"
 
     -- Authenticate (Leave passphrase as empty string)
-    safePublicKeyAuthFile session (user connInfo) (publicKey connInfo) (privateKey connInfo)
+    publicKeyAuthFile' session (user connInfo) (publicKey connInfo) (privateKey connInfo)
     putStrLn "Authorised"
 
     -- Send a file to remote host via SCP.
-    scriptSize <- safeScpSendFile session (script cmdOpts)
+    scriptSize <- scpSendFile' session (script cmdOpts)
 
     putStrLn $ "Sent: " ++ (show $ script cmdOpts) ++ " - "++ show scriptSize ++ " bytes."
     -- TODO add zero script size check
@@ -119,12 +119,12 @@ runSchedule opts = do
     pollUntilFinished opts jobId 20000000
 
     -- Get exit status
-    wrap_up_session <- safeSessionInit (host connInfo) (port connInfo)
-    safePublicKeyAuthFile wrap_up_session (user connInfo) (publicKey connInfo) (privateKey connInfo)
+    wrap_up_session <- sessionInit' (host connInfo) (port connInfo)
+    publicKeyAuthFile' wrap_up_session (user connInfo) (publicKey connInfo) (privateKey connInfo)
 
     exitStatus <- checkStatus wrap_up_session jobId "Exit_status"
     -- Copy logs file off server to ci
-    logSize <- safeScpReceiveFile wrap_up_session (logFile cmdOpts)
+    logSize <- scpReceiveFile' wrap_up_session (logFile cmdOpts)
     let (LogFile logPath) = logFile cmdOpts
     putStrLn $ "Received: " ++ (takeFileName logPath) ++ " - " ++ show logSize ++ " bytes."
     -- Remove script from server

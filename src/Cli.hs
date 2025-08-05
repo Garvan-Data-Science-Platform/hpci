@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Cli (
   Options(..)
   , Command(..)
@@ -14,6 +16,7 @@ module Cli (
   ) where
 
 
+import Data.Bifunctor (first)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Map.Strict (Map)
@@ -22,8 +25,8 @@ import Data.Maybe (fromMaybe)
 import Options.Applicative
 
 -- Types to avoid using primitives
-newtype User = User String deriving (Show)
-newtype Host = Host String deriving (Show)
+newtype User = User Text deriving (Show)
+newtype Host = Host Text deriving (Show)
 newtype Port = Port Int deriving (Show)
 newtype PublicKey = PublicKey FilePath deriving (Show)
 newtype PrivateKey = PrivateKey FilePath deriving (Show)
@@ -42,7 +45,7 @@ data Command
       script         :: Script,
       logFile        :: LogFile,
       optConfig      :: KeyValuePairs }
-  | Exec String deriving Show
+  | Exec Text deriving Show
 
 data Connection = Connection {
   user       :: User,
@@ -92,22 +95,26 @@ logFileParser = LogFile <$> strOption (long "logFile")
 
 type KeyValuePairs = Map Text Text
 
+-- Wrapper to handle string to text
+parseKeyValuePairsReader' :: String -> Either String KeyValuePairs
+parseKeyValuePairsReader' = first T.unpack . parseKeyValuePairs . T.pack
+
 keyValuePairsReader :: ReadM KeyValuePairs
-keyValuePairsReader = eitherReader parseKeyValuePairs
+keyValuePairsReader = eitherReader parseKeyValuePairsReader'
 
 -- Function to parse a series of comma separated key-value pairs
-parseKeyValuePairs :: String -> Either String KeyValuePairs
+parseKeyValuePairs :: Text -> Either Text KeyValuePairs
 parseKeyValuePairs input =
-    let pairs = T.splitOn (T.pack ",") (T.pack input)
+    let pairs = T.splitOn "," input
         parsedPairs = mapM (parsePair "=") pairs
     in fmap Map.fromList parsedPairs
 
 -- Function to parse key value pairs from text where
   -- keys and values are separated by `sep`
-parsePair :: String -> T.Text -> Either String (T.Text, T.Text)
-parsePair sep pair = case T.splitOn (T.pack sep) pair of
+parsePair :: Text -> Text -> Either Text (Text, Text)
+parsePair sep pair = case T.splitOn sep pair of
     [k, v] -> Right (k, v)
-    _      -> Left $ "Invalid key-value pair: " ++ T.unpack pair
+    _      -> Left ("Invalid key-value pair: " <> pair)
 
 keyValuePairsOption :: Parser (Maybe KeyValuePairs)
 keyValuePairsOption = optional $ option keyValuePairsReader

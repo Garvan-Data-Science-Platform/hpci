@@ -1,12 +1,13 @@
 module Helpers (
-  safeSessionInit
-  , safePublicKeyAuthFile
-  , safeScpSendFile
-  , safeScpReceiveFile
+  sessionInit'
+  , publicKeyAuthFile'
+  , scpSendFile'
+  , scpReceiveFile'
   , runCommand
   , parseExecResult
 ) where
 
+import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 
@@ -40,18 +41,18 @@ runCommand s cmd = withChannel s $ \ch -> do
 parseExecResult :: (Int, BSL.ByteString) -> (Int, String)
 parseExecResult (i, bs) = (i, BSL8.unpack bs)
 
-safeSessionInit :: Host -> Port -> IO Session
-safeSessionInit (Host host) (Port port) = sessionInit host port
+sessionInit' :: Host -> Port -> IO Session
+sessionInit' (Host host) (Port port) = sessionInit (T.unpack host) port
 
 -- Default to not using a passphrase
-safePublicKeyAuthFile :: Session -> User -> PublicKey -> PrivateKey -> IO ()
-safePublicKeyAuthFile s (User user) (PublicKey publicKey) (PrivateKey privateKey) = publicKeyAuthFile s user publicKey privateKey ""
+publicKeyAuthFile' :: Session -> User -> PublicKey -> PrivateKey -> IO ()
+publicKeyAuthFile' s (User user) (PublicKey publicKey) (PrivateKey privateKey) = publicKeyAuthFile s (T.unpack user) publicKey privateKey ""
 
 -- TODO: Make script location configurable
 -- TODO: Make file creation mode configurable
-safeScpSendFile :: Session -> Script -> IO Integer
-safeScpSendFile s (Script script) = scpSendFile s 0o644 script (takeFileName script)
+scpSendFile' :: Session -> Script -> IO Integer
+scpSendFile' s (Script script) = scpSendFile s 0o644 script (takeFileName script)
 
 -- scpReceiveFile wrap_up_session (logFile $ optCommand opts) (takeFileName $ logFile $ optCommand opts)
-safeScpReceiveFile :: Session -> LogFile -> IO Integer
-safeScpReceiveFile s (LogFile logFile) = scpReceiveFile s logFile (takeFileName logFile)
+scpReceiveFile' :: Session -> LogFile -> IO Integer
+scpReceiveFile' s (LogFile logFile) = scpReceiveFile s logFile (takeFileName logFile)
