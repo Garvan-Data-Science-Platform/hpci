@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Schedule (runSchedule) where
+module Schedule (
+  runSchedule
+  , parseSubmissionResult
+) where
 
 import Control.Concurrent
 import Data.List (intercalate)
@@ -22,6 +25,7 @@ import System.FilePath
 
 import Cli
 import Helpers
+import Types
 
 -- Convert the map to a string of key-value pairs
 mapToString :: Map.Map Text Text -> String
@@ -37,8 +41,12 @@ constructQsubCommand opts =
       (Script scriptPath) = script $ optCommand opts
   in "qsub" ++ configArg ++ " " ++ takeFileName scriptPath
 
-parseSubmissionResult :: (Int, BSL.ByteString) -> String
-parseSubmissionResult = BSL8.unpack . head . BSL8.split '.' . snd
+parseSubmissionResult :: (Int, BSL.ByteString) -> Maybe Types.JobId
+parseSubmissionResult tuple =
+  let
+    rawString = BSL8.unpack . head . BSL8.split '.' . snd $ tuple
+  in
+    mkJobId rawString
 
 -- Parses a field from typical `qstat -xf` response (example below)
 --
@@ -62,23 +70,23 @@ findKeyValuePair pairs keyOfInterest =
         Just kv -> Right kv
         Nothing -> Left $ "Key " ++ T.unpack keyOfInterest ++ " not found"
 
-checkStatus :: Session -> String -> String -> IO (Either String T.Text)
+checkStatus :: Session -> JobId -> String -> IO (Either String T.Text)
 checkStatus s jid keyOfInterest = do
-  jobStatus <- runCommand s ("qstat -fx " ++ jid)
+  jobStatus <- runCommand s ("qstat -fx " ++ getJobId jid)
   let statusLines = map (T.strip . T.pack) (tail $ lines (BSL8.unpack $ snd jobStatus))
   let result = findKeyValuePair statusLines (T.pack keyOfInterest)
   case result of
     Right (_,v) -> return $ Right v
     Left err    -> return $ Left err
 
-pollUntilFinished :: Options -> String -> Int -> IO ()
+pollUntilFinished :: Options -> JobId -> Int -> IO ()
 pollUntilFinished opts jid interval = do
   s <- sessionInit' (host $ connectionInfo opts) (port $ connectionInfo opts)
   publicKeyAuthFile' s (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts)
   r <- checkStatus s jid "job_state"
   sessionClose s
   case r of
-    Right "F" -> putStrLn ("Job " ++ jid ++ ": Finished")
+    Right "F" -> putStrLn ("Job " ++ getJobId jid ++ ": Finished")
     Right status -> do
       putStrLn ("Job status: " ++ T.unpack status)
       threadDelay interval
@@ -109,43 +117,48 @@ runSchedule opts = do
     -- Submit job using script file
     putStrLn $ "Qsub command to run on server: " ++ constructQsubCommand opts
     submissionResult <- runCommand session ((constructQsubCommand opts) ++ " 2>&1")
-    let jobId = parseSubmissionResult submissionResult
-    putStrLn ("Job ID: " ++ jobId)
+    let maybeJobId = parseSubmissionResult submissionResult
 
-    sessionClose session
-    -- Query job status
-    -- TODO: Add timeout?
-    -- TODO: add user defined poll interval with default
-    pollUntilFinished opts jobId 20000000
+    case maybeJobId of
+      Nothing ->
+        putStrLn "Error: Could not parse a valid Job ID from the input."
+      Just jobId -> do
+        putStrLn ("Job ID: " ++ getJobId jobId)
 
-    -- Get exit status
-    wrap_up_session <- sessionInit' (host connInfo) (port connInfo)
-    publicKeyAuthFile' wrap_up_session (user connInfo) (publicKey connInfo) (privateKey connInfo)
+        sessionClose session
+        -- Query job status
+        -- TODO: Add timeout?
+        -- TODO: add user defined poll interval with default
+        pollUntilFinished opts jobId 20000000
 
-    exitStatus <- checkStatus wrap_up_session jobId "Exit_status"
-    -- Copy logs file off server to ci
-    logSize <- scpReceiveFile' wrap_up_session (logFile cmdOpts)
-    let (LogFile logPath) = logFile cmdOpts
-    putStrLn $ "Received: " ++ (takeFileName logPath) ++ " - " ++ show logSize ++ " bytes."
-    -- Remove script from server
-    _ <- withChannel wrap_up_session $ \ch -> do
-           channelExecute ch ("rm " ++ (show $ script cmdOpts))
-           result <- readAllChannel ch
-           BSL.putStr result
-    -- Close active session
-    sessionClose wrap_up_session
-    putStrLn "Closed Session"
-    -- Print logs file
-    contents <- readFile $ takeFileName logPath
-    putStrLn "Contents of log file:"
-    putStr contents
-    -- Exit with the same exit status of the HPC job (this gives us a nice CI error)
-    case exitStatus of
-      Left err -> putStrLn $ "WARNING: " ++ err
-      Right s  -> do
-        let exitCode = T.unpack s
-        case exitCode of
-          "0" ->  putStrLn $ "Job Exit Status: " ++ exitCode
-          _   ->  do
-            putStrLn $ "Job Exit Status: " ++ exitCode
-            exitWith (ExitFailure $ read exitCode)
+        -- Get exit status
+        wrap_up_session <- sessionInit' (host connInfo) (port connInfo)
+        publicKeyAuthFile' wrap_up_session (user connInfo) (publicKey connInfo) (privateKey connInfo)
+
+        exitStatus <- checkStatus wrap_up_session jobId "Exit_status"
+        -- Copy logs file off server to ci
+        logSize <- scpReceiveFile' wrap_up_session (logFile cmdOpts)
+        let (LogFile logPath) = logFile cmdOpts
+        putStrLn $ "Received: " ++ (takeFileName logPath) ++ " - " ++ show logSize ++ " bytes."
+        -- Remove script from server
+        _ <- withChannel wrap_up_session $ \ch -> do
+               channelExecute ch ("rm " ++ (show $ script cmdOpts))
+               result <- readAllChannel ch
+               BSL.putStr result
+        -- Close active session
+        sessionClose wrap_up_session
+        putStrLn "Closed Session"
+        -- Print logs file
+        contents <- readFile $ takeFileName logPath
+        putStrLn "Contents of log file:"
+        putStr contents
+        -- Exit with the same exit status of the HPC job (this gives us a nice CI error)
+        case exitStatus of
+          Left err -> putStrLn $ "WARNING: " ++ err
+          Right s  -> do
+            let exitCode = T.unpack s
+            case exitCode of
+              "0" ->  putStrLn $ "Job Exit Status: " ++ exitCode
+              _   ->  do
+                putStrLn $ "Job Exit Status: " ++ exitCode
+                exitWith (ExitFailure $ read exitCode)

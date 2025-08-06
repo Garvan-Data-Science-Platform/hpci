@@ -31,7 +31,7 @@ common common-options
 library
   import:          common-options
   hs-source-dirs:  src
-  exposed-modules: Exec, Cli, Helpers, Schedule
+  exposed-modules: Exec, Cli, Helpers, Schedule, Types
   build-depends:
     , containers
     , mtl
@@ -54,16 +54,16 @@ test-suite hpci-test
   import:         common-options
   type:           exitcode-stdio-1.0
   hs-source-dirs: test
-  main-is:        test.hs
-  other-modules:    Paths_hpci
+  main-is:        Tests.hs
+  other-modules:  Props, Arbitrary
   build-depends:
     , filepath
     , hspec
     , HUnit
     , hpci
-    , QuickCheck
     , tasty
-    , tasty-program
+    , tasty-quickcheck
+    , bytestring
     , hpci
 
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
