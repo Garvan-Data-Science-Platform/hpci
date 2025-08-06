@@ -4,7 +4,6 @@ REGISTRY:=$(REGION)-docker.pkg.dev/$(PROJECT)/docker/
 IMAGE:=pbs
 DOCKER_TAG:=$(REGISTRY)$(IMAGE):latest
 EXEC_COMMAND:=pwd
-HPCI_EXE?=cabal run exes --
 
 SCHEDULE_ARGS=--user pbsuser \
 			  --host 127.0.0.1 \
@@ -52,8 +51,7 @@ test: test-schedule test-exec # Run cabal tests
 
 .PHONY: test
 test-schedule: ## Compile HPCI and test the schedule command with dockerised OpenPBS (requires `make run` first)
-	$(HPCI_EXE) $(SCHEDULE_ARGS)
-	# cabal run exes -- $(SCHEDULE_ARGS)
+	cabal run exes -- $(SCHEDULE_ARGS)
 
 .PHONY: test-exec
 test-exec: ## Compile HPCI and test the exec command with dockerised OpenPBS (requires `make run` first)
@@ -64,12 +62,11 @@ test-bin: test-bin-schedule test-bin-exec # Run tests on binary
 
 .PHONY: test-bin-schedule
 test-bin-schedule: ## Test HPCI binary and test schedule command with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
-	$(HPCI_EXE) $(SCHEDULE_ARGS)
+	result/bin/hpci-exe $(SCHEDULE_ARGS)
 
 .PHONY: test-bin-exec
 test-bin-exec: ## Test HPCI binary and test exec command with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
-	$(HPCI_EXE) $(EXEC_ARGS)
-	# result/bin/hpci-exe $(EXEC_ARGS)
+	result/bin/hpci-exe $(EXEC_ARGS)
 
 .PHONY: build
 build: ## Build fully-static binary on linux x86_64
