@@ -30,7 +30,6 @@
               enableSharedExecutables = false;
               enableSharedLibraries = false;
               doCheck = true;
-              testTarget = "--test-options=--quickcheck-verbose";
               configureFlags = [
                 "--ghc-option=-optl=-static"
                 "--ghc-option=-optl=-L${pkgs.zlib.static}/lib"

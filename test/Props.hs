@@ -5,7 +5,9 @@ import Test.Tasty (TestTree)
 import Test.Tasty.QuickCheck as QC
 
 import Types (JobId, getJobId)
-import TestTypes (MalformedInput(..))
+import Helpers (
+  MalformedInput(..)
+  )
 import Arbitrary()
 
 import Schedule (parseSubmissionResult)

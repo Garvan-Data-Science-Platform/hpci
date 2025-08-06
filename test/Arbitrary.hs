@@ -5,7 +5,9 @@ module Arbitrary () where
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Test.Tasty.QuickCheck as QC
 import Types (JobId, mkJobId)
-import TestTypes (MalformedInput(..))
+import Helpers (
+  MalformedInput(..)
+  )
 
 instance Arbitrary JobId where
   arbitrary = do
@@ -25,4 +27,3 @@ instance Arbitrary MalformedInput where
         return ""  -- empty String
       ]
     return (MalformedInput (BSL8.pack randomString))
-

@@ -44,9 +44,11 @@ constructQsubCommand opts =
 parseSubmissionResult :: (Int, BSL.ByteString) -> Maybe Types.JobId
 parseSubmissionResult tuple =
   let
-    rawString = BSL8.unpack . head . BSL8.split '.' . snd $ tuple
+    parts = BSL8.split '.' . snd $ tuple
   in
-    mkJobId rawString
+    case parts of
+      (prefix : _) -> mkJobId $ BSL8.unpack prefix
+      _            -> Nothing
 
 -- Parses a field from typical `qstat -xf` response (example below)
 --
@@ -66,7 +68,7 @@ parseSubmissionResult tuple =
 --   The function takes a qstat response and a key parameter. It drops the first line of the response, and attempts to parse a key-value pair from each line. If parsing was successful, tries to filter the parsed pairs by those whos key to matches the desired key
 findKeyValuePair :: [T.Text] -> T.Text -> Either String (T.Text, T.Text)
 findKeyValuePair pairs keyOfInterest =
-    case listToMaybe [kv | Right kv@(k, _) <- map (parsePair " = ") pairs, k == keyOfInterest] of
+    case listToMaybe [kv | Right kv@(k, _) <- fmap (parsePair " = ") pairs, k == keyOfInterest] of
         Just kv -> Right kv
         Nothing -> Left $ "Key " ++ T.unpack keyOfInterest ++ " not found"
 
@@ -93,8 +95,7 @@ pollUntilFinished opts jid interval = do
       pollUntilFinished opts jid interval
     Left err -> putStrLn ("Error: " ++ err)
 
--- TODO: error handling for IO and parsing job id; parse status of job
--- TODO: explore Reader monad to replace global variables and thread config through code
+-- TODO: error handling for IO and parsing status of job
 
 runSchedule :: Options -> IO()
 runSchedule opts = do

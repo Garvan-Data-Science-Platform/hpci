@@ -55,7 +55,7 @@ test-suite hpci-test
   type:           exitcode-stdio-1.0
   hs-source-dirs: test
   main-is:        Tests.hs
-  other-modules:  Props, Arbitrary, TestTypes
+  other-modules:  Props, Arbitrary, Helpers
   build-depends:
     , filepath
     , hspec
