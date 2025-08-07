@@ -55,16 +55,17 @@ test-suite hpci-test
   type:           exitcode-stdio-1.0
   hs-source-dirs: test
   main-is:        Tests.hs
-  other-modules:  Props, Arbitrary, Helpers
+  other-modules:  Props, Specs, Arbitrary, Helpers
   build-depends:
     , filepath
     , hspec
-    , HUnit
     , hpci
     , tasty
     , tasty-quickcheck
+    , tasty-hspec >= 1.1.5
     , bytestring
     , hpci
+    , retry
 
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
 

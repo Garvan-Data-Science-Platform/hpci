@@ -2,14 +2,17 @@ module Main (
   main
 ) where
 
-import Test.Tasty (defaultMain, testGroup, TestTree)
+import Test.Tasty (defaultMain, testGroup)
+import Test.Tasty.Hspec (testSpecs)
 import Props (props)
-
-tests :: TestTree
-tests =
-  testGroup "All `hpci` tests"
-    [ testGroup "Props" props ]
+import Specs (retrySpec)
 
 main :: IO ()
 main = do
-  defaultMain tests
+  specs <- concat <$> traverse testSpecs [retrySpec]
+  defaultMain $
+    testGroup "All `hpci` tests"
+      [
+        testGroup "Props" props
+      , testGroup "Retry logic" specs
+      ]

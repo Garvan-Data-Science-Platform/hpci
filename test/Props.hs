@@ -12,6 +12,7 @@ import Arbitrary()
 
 import Schedule (parseSubmissionResult)
 
+-- Test parseSubmissionResult
 prop_extractsJobId :: JobId -> Bool
 prop_extractsJobId jobId =
   let

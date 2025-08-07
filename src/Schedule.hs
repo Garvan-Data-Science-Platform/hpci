@@ -102,13 +102,16 @@ runSchedule opts = do
     let connInfo                  = connectionInfo opts
         cmdOpts                   = optCommand opts
 
+    -- Add retry?
     session <- sessionInit' (host connInfo) (port connInfo)
     putStrLn "Start Session"
 
+    -- Add retry?
     -- Authenticate (Leave passphrase as empty string)
     publicKeyAuthFile' session (user connInfo) (publicKey connInfo) (privateKey connInfo)
     putStrLn "Authorised"
 
+    -- Add retry?
     -- Send a file to remote host via SCP.
     scriptSize <- scpSendFile' session (script cmdOpts)
 
@@ -117,6 +120,7 @@ runSchedule opts = do
 
     -- Submit job using script file
     putStrLn $ "Qsub command to run on server: " ++ constructQsubCommand opts
+    -- Add retry?
     submissionResult <- runCommand session ((constructQsubCommand opts) ++ " 2>&1")
     let maybeJobId = parseSubmissionResult submissionResult
 
@@ -133,11 +137,15 @@ runSchedule opts = do
         pollUntilFinished opts jobId 20000000
 
         -- Get exit status
+    -- Add retry?
         wrap_up_session <- sessionInit' (host connInfo) (port connInfo)
+    -- Add retry?
         publicKeyAuthFile' wrap_up_session (user connInfo) (publicKey connInfo) (privateKey connInfo)
 
+    -- Add retry?
         exitStatus <- checkStatus wrap_up_session jobId "Exit_status"
         -- Copy logs file off server to ci
+    -- Add retry?
         logSize <- scpReceiveFile' wrap_up_session (logFile cmdOpts)
         let (LogFile logPath) = logFile cmdOpts
         putStrLn $ "Received: " ++ (takeFileName logPath) ++ " - " ++ show logSize ++ " bytes."
