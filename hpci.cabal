@@ -40,6 +40,7 @@ library
     , libssh2
     , optparse-applicative
     , text
+    , retry
 
 executable hpci-exe
   import:         common-options
@@ -59,7 +60,6 @@ test-suite hpci-test
   build-depends:
     , filepath
     , hspec
-    , hpci
     , tasty
     , tasty-quickcheck
     , tasty-hspec >= 1.1.5

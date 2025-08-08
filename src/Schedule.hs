@@ -81,10 +81,9 @@ checkStatus s jid keyOfInterest = do
     Right (_,v) -> return $ Right v
     Left err    -> return $ Left err
 
-pollUntilFinished :: Options -> JobId -> Int -> IO ()
-pollUntilFinished opts jid interval = do
-  s <- sessionInit' (host $ connectionInfo opts) (port $ connectionInfo opts)
-  publicKeyAuthFile' s (user $ connectionInfo opts) (publicKey $ connectionInfo opts) (privateKey $ connectionInfo opts)
+pollUntilFinished :: Connection -> JobId -> Int -> IO ()
+pollUntilFinished connInfo jid interval = do
+  s <- connectWithRetry connInfo
   r <- checkStatus s jid "job_state"
   sessionClose s
   case r of
@@ -92,7 +91,7 @@ pollUntilFinished opts jid interval = do
     Right status -> do
       putStrLn ("Job status: " ++ T.unpack status)
       threadDelay interval
-      pollUntilFinished opts jid interval
+      pollUntilFinished connInfo jid interval
     Left err -> putStrLn ("Error: " ++ err)
 
 -- TODO: error handling for IO and parsing status of job
@@ -102,14 +101,7 @@ runSchedule opts = do
     let connInfo                  = connectionInfo opts
         cmdOpts                   = optCommand opts
 
-    -- Add retry?
-    session <- sessionInit' (host connInfo) (port connInfo)
-    putStrLn "Start Session"
-
-    -- Add retry?
-    -- Authenticate (Leave passphrase as empty string)
-    publicKeyAuthFile' session (user connInfo) (publicKey connInfo) (privateKey connInfo)
-    putStrLn "Authorised"
+    session <- connectWithRetry connInfo
 
     -- Add retry?
     -- Send a file to remote host via SCP.
@@ -134,13 +126,10 @@ runSchedule opts = do
         -- Query job status
         -- TODO: Add timeout?
         -- TODO: add user defined poll interval with default
-        pollUntilFinished opts jobId 20000000
+        pollUntilFinished connInfo jobId 20000000
 
         -- Get exit status
-    -- Add retry?
-        wrap_up_session <- sessionInit' (host connInfo) (port connInfo)
-    -- Add retry?
-        publicKeyAuthFile' wrap_up_session (user connInfo) (publicKey connInfo) (privateKey connInfo)
+        wrap_up_session <- connectWithRetry connInfo
 
     -- Add retry?
         exitStatus <- checkStatus wrap_up_session jobId "Exit_status"

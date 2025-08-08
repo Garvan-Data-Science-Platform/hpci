@@ -36,8 +36,8 @@ newtype LogFile = LogFile FilePath deriving (Show)
 -- Data types for CLI options
 
 data Options = Options {
-  connectionInfo :: Connection,
-  optCommand     :: Command
+  connectionInfo :: Connection
+  , optCommand   :: Command
 } deriving (Show)
 
 data Command

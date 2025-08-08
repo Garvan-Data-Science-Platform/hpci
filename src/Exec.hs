@@ -9,16 +9,17 @@ import Network.SSH.Client.LibSSH2
 import System.Exit
 
 import Cli
-import Helpers
+import Helpers (
+  connectWithRetry
+  , runCommand
+  , parseExecResult
+  )
 
 runExec :: Options -> Text -> IO()
 runExec opts execStr = do
     let connInfo                  = connectionInfo opts
 
-    session <- sessionInit' (host connInfo) (port connInfo)
-
-    -- Authenticate (Leave passphrase as empty string)
-    publicKeyAuthFile' session (user connInfo) (publicKey connInfo) (privateKey connInfo)
+    session <- connectWithRetry connInfo
 
     -- Run exec command
     execResult <- runCommand session (T.unpack execStr <> " 2>&1")
