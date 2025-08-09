@@ -1,8 +1,8 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Helpers (
-  scpSendFile'
-  , scpReceiveFile'
+  scpSendFileRetry
+  , scpReceiveFileRetry
   , runCommand
   , parseExecResult
   , connectWithRetry
@@ -60,11 +60,13 @@ publicKeyAuthFile' s (User u) (PublicKey publicK) (PrivateKey privateK) = public
 
 -- TODO: Make script location configurable
 -- TODO: Make file creation mode configurable
-scpSendFile' :: Session -> Script -> IO Integer
-scpSendFile' s (Script script) = scpSendFile s 0o644 script (takeFileName script)
+scpSendFileRetry :: RetryPolicy -> Session -> Script -> IO Integer
+scpSendFileRetry policy s (Script script) =
+  sessionRetry policy (scpSendFile s 0o644 script (takeFileName script))
 
-scpReceiveFile' :: Session -> LogFile -> IO Integer
-scpReceiveFile' s (LogFile logFile) = scpReceiveFile s logFile (takeFileName logFile)
+scpReceiveFileRetry :: RetryPolicy -> Session -> LogFile -> IO Integer
+scpReceiveFileRetry policy s (LogFile logFile) =
+  sessionRetry policy (scpReceiveFile s logFile (takeFileName logFile))
 
 -- | helpers to help with Retries
 defaultRetryPolicy :: RetryPolicy
@@ -83,6 +85,7 @@ connect connInfo = do
   putStrLn "SSH session established"
   return s
 
+-- add policy arg
 connectWithRetry :: Connection -> IO Session
 connectWithRetry connInfo =
   sessionRetry defaultRetryPolicy (connect connInfo)

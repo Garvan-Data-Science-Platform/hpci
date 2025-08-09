@@ -24,7 +24,13 @@ import System.Exit
 import System.FilePath
 
 import Cli
-import Helpers
+import Helpers (
+  defaultRetryPolicy
+  , scpSendFileRetry
+  , scpReceiveFileRetry
+  , runCommand
+  , connectWithRetry
+  )
 import Types
 
 -- Convert the map to a string of key-value pairs
@@ -103,16 +109,16 @@ runSchedule opts = do
 
     session <- connectWithRetry connInfo
 
-    -- Add retry?
     -- Send a file to remote host via SCP.
-    scriptSize <- scpSendFile' session (script cmdOpts)
+    scriptSize <- scpSendFileRetry defaultRetryPolicy session (script cmdOpts)
 
     putStrLn $ "Sent: " ++ (show $ script cmdOpts) ++ " - "++ show scriptSize ++ " bytes."
     -- TODO add zero script size check
 
     -- Submit job using script file
     putStrLn $ "Qsub command to run on server: " ++ constructQsubCommand opts
-    -- Add retry?
+    -- Note: Add retry? I'm torn. I don't want to accidentally schedule multiple concurrent jobs.
+    --   Will use improved error handling instead
     submissionResult <- runCommand session ((constructQsubCommand opts) ++ " 2>&1")
     let maybeJobId = parseSubmissionResult submissionResult
 
@@ -131,11 +137,10 @@ runSchedule opts = do
         -- Get exit status
         wrap_up_session <- connectWithRetry connInfo
 
-    -- Add retry?
+    -- Add retry? here it is retrying parsing etc
         exitStatus <- checkStatus wrap_up_session jobId "Exit_status"
         -- Copy logs file off server to ci
-    -- Add retry?
-        logSize <- scpReceiveFile' wrap_up_session (logFile cmdOpts)
+        logSize <- scpReceiveFileRetry defaultRetryPolicy wrap_up_session (logFile cmdOpts)
         let (LogFile logPath) = logFile cmdOpts
         putStrLn $ "Received: " ++ (takeFileName logPath) ++ " - " ++ show logSize ++ " bytes."
         -- Remove script from server
