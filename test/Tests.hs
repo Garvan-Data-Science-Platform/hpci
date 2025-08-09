@@ -7,9 +7,12 @@ import Test.Tasty.Hspec (testSpecs)
 import Props (props)
 import Specs (retrySpec)
 
+import Helpers (defaultRetryPolicy)
+
 main :: IO ()
 main = do
-  specs <- concat <$> traverse testSpecs [retrySpec]
+  -- Note: using traverse here as I expect there will be multiple Specs
+  specs <- concat <$> traverse testSpecs [retrySpec defaultRetryPolicy]
   defaultMain $
     testGroup "All `hpci` tests"
       [

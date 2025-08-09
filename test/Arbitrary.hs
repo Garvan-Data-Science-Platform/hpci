@@ -5,7 +5,7 @@ module Arbitrary () where
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Test.Tasty.QuickCheck as QC
 import Types (JobId, mkJobId)
-import Helpers (
+import TestHelpers (
   MalformedInput(..)
   )
 

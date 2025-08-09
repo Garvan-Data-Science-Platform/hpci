@@ -1,4 +1,4 @@
-module Helpers (
+module TestHelpers (
   MalformedInput(..)
 ) where
 

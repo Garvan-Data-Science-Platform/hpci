@@ -10,15 +10,15 @@ import Control.Exception
 import Data.Typeable
 import Control.Retry
 
+import Helpers (
+  sessionRetry
+  )
+
 -- Test retry functionality
 data MockSession = MockSession deriving (Show, Eq)
 
 data MockConnectionError = MockConnectionError deriving (Show, Typeable)
 instance Exception MockConnectionError
-
-connectWithRetry :: RetryPolicyM IO -> IO MockSession -> IO MockSession
-connectWithRetry policy actionToRetry =
-  recoverAll policy (\_ -> actionToRetry)
 
 mockConnect :: IORef Int -> IO MockSession
 mockConnect attemptCounter = do
@@ -30,15 +30,11 @@ mockConnect attemptCounter = do
     then throwIO MockConnectionError
     else return MockSession
 
-retrySpec :: Spec
-retrySpec = describe "connectWithRetry" $ do
+retrySpec :: RetryPolicy -> Spec
+retrySpec policy = describe "connectWithRetry" $ do
   it "succeeds on the third attempt" $ do
     counter <- newIORef 0
     let failingAction = mockConnect counter
 
-    let testPolicy :: RetryPolicyM IO
-        testPolicy =
-          limitRetries 5 <>
-          constantDelay 10
-    result <- connectWithRetry testPolicy failingAction
+    result <- sessionRetry policy failingAction
     result `shouldBe` MockSession
