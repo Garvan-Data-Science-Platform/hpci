@@ -45,7 +45,7 @@ constructQsubCommand opts =
                   then " -v " <> configString 
                   else ""
       (Script scriptPath) = script $ optCommand opts
-  in "qsub" ++ configArg ++ " " ++ takeFileName scriptPath
+  in "qsub" <> configArg <> " " <> takeFileName scriptPath
 
 parseSubmissionResult :: (Int, BSL.ByteString) -> Maybe Types.JobId
 parseSubmissionResult tuple =
@@ -76,11 +76,11 @@ findKeyValuePair :: [T.Text] -> T.Text -> Either String (T.Text, T.Text)
 findKeyValuePair pairs keyOfInterest =
     case listToMaybe [kv | Right kv@(k, _) <- fmap (parsePair " = ") pairs, k == keyOfInterest] of
         Just kv -> Right kv
-        Nothing -> Left $ "Key " ++ T.unpack keyOfInterest ++ " not found"
+        Nothing -> Left $ "Key " <> T.unpack keyOfInterest <> " not found"
 
 checkStatus :: Session -> JobId -> String -> IO (Either String T.Text)
 checkStatus s jid keyOfInterest = do
-  jobStatus <- runCommand s ("qstat -fx " ++ getJobId jid)
+  jobStatus <- runCommand s ("qstat -fx " <> showJobId jid)
   let statusLines = map (T.strip . T.pack) (tail $ lines (BSL8.unpack $ snd jobStatus))
   let result = findKeyValuePair statusLines (T.pack keyOfInterest)
   case result of
@@ -93,12 +93,12 @@ pollUntilFinished connInfo jid interval = do
   r <- checkStatus s jid "job_state"
   sessionClose s
   case r of
-    Right "F" -> putStrLn ("Job " ++ getJobId jid ++ ": Finished")
+    Right "F" -> putStrLn ("Job " <> showJobId jid <> ": Finished")
     Right status -> do
-      putStrLn ("Job status: " ++ T.unpack status)
+      putStrLn ("Job status: " <> T.unpack status)
       threadDelay interval
       pollUntilFinished connInfo jid interval
-    Left err -> putStrLn ("Error: " ++ err)
+    Left err -> putStrLn ("Error: " <> err)
 
 -- TODO: error handling for IO and parsing status of job
 
@@ -112,21 +112,21 @@ runSchedule opts = do
     -- Send a file to remote host via SCP.
     scriptSize <- scpSendFileRetry defaultRetryPolicy session (script cmdOpts)
 
-    putStrLn $ "Sent: " ++ (show $ script cmdOpts) ++ " - "++ show scriptSize ++ " bytes."
+    putStrLn $ "Sent: " <> show (script cmdOpts) <> " - " <> show scriptSize <> " bytes."
     -- TODO add zero script size check
 
     -- Submit job using script file
-    putStrLn $ "Qsub command to run on server: " ++ constructQsubCommand opts
+    putStrLn $ "Qsub command to run on server: " <> constructQsubCommand opts
     -- Note: Add retry? I'm torn. I don't want to accidentally schedule multiple concurrent jobs.
     --   Will use improved error handling instead
-    submissionResult <- runCommand session ((constructQsubCommand opts) ++ " 2>&1")
+    submissionResult <- runCommand session (constructQsubCommand opts <> " 2>&1")
     let maybeJobId = parseSubmissionResult submissionResult
 
     case maybeJobId of
       Nothing ->
         putStrLn "Error: Could not parse a valid Job ID from the input."
       Just jobId -> do
-        putStrLn ("Job ID: " ++ getJobId jobId)
+        putStrLn ("Job ID: " <> showJobId jobId)
 
         sessionClose session
         -- Query job status
@@ -142,10 +142,10 @@ runSchedule opts = do
         -- Copy logs file off server to ci
         logSize <- scpReceiveFileRetry defaultRetryPolicy wrap_up_session (logFile cmdOpts)
         let (LogFile logPath) = logFile cmdOpts
-        putStrLn $ "Received: " ++ (takeFileName logPath) ++ " - " ++ show logSize ++ " bytes."
+        putStrLn $ "Received: " <> takeFileName logPath <> " - " <> show logSize <> " bytes."
         -- Remove script from server
         _ <- withChannel wrap_up_session $ \ch -> do
-               channelExecute ch ("rm " ++ (show $ script cmdOpts))
+               channelExecute ch ("rm " <> show (script cmdOpts))
                result <- readAllChannel ch
                BSL.putStr result
         -- Close active session
@@ -157,11 +157,11 @@ runSchedule opts = do
         putStr contents
         -- Exit with the same exit status of the HPC job (this gives us a nice CI error)
         case exitStatus of
-          Left err -> putStrLn $ "WARNING: " ++ err
+          Left err -> putStrLn $ "WARNING: " <> err
           Right s  -> do
             let exitCode = T.unpack s
             case exitCode of
-              "0" ->  putStrLn $ "Job Exit Status: " ++ exitCode
+              "0" ->  putStrLn $ "Job Exit Status: " <> exitCode
               _   ->  do
-                putStrLn $ "Job Exit Status: " ++ exitCode
+                putStrLn $ "Job Exit Status: " <> exitCode
                 exitWith (ExitFailure $ read exitCode)

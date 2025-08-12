@@ -1,8 +1,5 @@
 module Exec (runExec) where
 
--- TODO: add helpers iwth run command
--- import Helpers
-
 import Data.Text (Text)
 import qualified Data.Text as T
 import Network.SSH.Client.LibSSH2
@@ -17,7 +14,7 @@ import Helpers (
 
 runExec :: Options -> Text -> IO()
 runExec opts execStr = do
-    let connInfo                  = connectionInfo opts
+    let connInfo = connectionInfo opts
 
     session <- connectWithRetry connInfo
 

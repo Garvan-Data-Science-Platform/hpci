@@ -22,7 +22,7 @@ instance Arbitrary MalformedInput where
     randomString <- QC.oneof
       [
         -- no dots, at least one non-digit
-        QC.listOf1 (QC.elements (['a'..'z'] ++ ['A'..'Z']))
+        QC.listOf1 (QC.elements (['a'..'z'] <> ['A'..'Z']))
         ,
         return ""  -- empty String
       ]

@@ -1,17 +1,22 @@
 module Types (
   JobId
   , getJobId
+  , showJobId
   , mkJobId
 ) where
 
-import Data.Char (isDigit)
+import Text.Read
 
 -- Custom type to represent a valid Job ID
--- TODO: should this be int?
-newtype JobId = JobId { getJobId :: String } deriving (Show, Eq)
+newtype JobId = JobId { getJobId :: Integer } deriving (Show, Eq)
 
--- TODO: should this be int?
 mkJobId :: String -> Maybe JobId
-mkJobId s
-  | not (null s) && all isDigit s = Just (JobId s)
-  | otherwise                     = Nothing
+mkJobId s =
+  case readMaybe s of
+    Nothing  -> Nothing
+    Just jobInt
+      | jobInt >= 0 -> Just (JobId jobInt)
+      | otherwise   -> Nothing
+
+showJobId :: JobId -> String
+showJobId = show . getJobId

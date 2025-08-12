@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 
 module Specs (retrySpec) where
@@ -24,7 +22,7 @@ mockConnect :: IORef Int -> IO MockSession
 mockConnect attemptCounter = do
   attempt <- readIORef attemptCounter
   modifyIORef' attemptCounter (+1)
-  putStrLn $ "Mock connection: trying attempt #" ++ show (attempt + 1)
+  putStrLn $ "Mock connection: trying attempt #" <> show (attempt + 1)
 
   if attempt < 2
     then throwIO MockConnectionError

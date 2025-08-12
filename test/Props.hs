@@ -4,7 +4,7 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Test.Tasty (TestTree)
 import Test.Tasty.QuickCheck as QC
 
-import Types (JobId, getJobId)
+import Types (JobId, showJobId)
 import TestHelpers (
   MalformedInput(..)
   )
@@ -16,7 +16,7 @@ import Schedule (parseSubmissionResult)
 prop_extractsJobId :: JobId -> Bool
 prop_extractsJobId jobId =
   let
-    parsedResult = parseSubmissionResult (0, BSL8.pack (getJobId jobId <> ".pbs"))
+    parsedResult = parseSubmissionResult (0, BSL8.pack (showJobId jobId <> ".pbs"))
   in
     parsedResult == Just jobId
 
