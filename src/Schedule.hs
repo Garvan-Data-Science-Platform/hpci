@@ -101,7 +101,6 @@ pollUntilFinished connInfo jid interval = do
     Left err -> putStrLn ("Error: " <> err)
 
 -- TODO: error handling for IO and parsing status of job
-
 runSchedule :: Options -> IO()
 runSchedule opts = do
     let connInfo                  = connectionInfo opts
@@ -117,18 +116,22 @@ runSchedule opts = do
 
     -- Submit job using script file
     putStrLn $ "Qsub command to run on server: " <> constructQsubCommand opts
+
     -- Note: Add retry? I'm torn. I don't want to accidentally schedule multiple concurrent jobs.
     --   Will use improved error handling instead
     submissionResult <- runCommand session (constructQsubCommand opts <> " 2>&1")
+
     let maybeJobId = parseSubmissionResult submissionResult
 
     case maybeJobId of
-      Nothing ->
+      Nothing -> do
         putStrLn "Error: Could not parse a valid Job ID from the input."
+        sessionClose session
+
       Just jobId -> do
         putStrLn ("Job ID: " <> showJobId jobId)
-
         sessionClose session
+
         -- Query job status
         -- TODO: Add timeout?
         -- TODO: add user defined poll interval with default
