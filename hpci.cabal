@@ -31,7 +31,12 @@ common common-options
 library
   import:          common-options
   hs-source-dirs:  src
-  exposed-modules: Exec, Cli, Helpers, Schedule
+  exposed-modules:
+     Exec
+    , Cli
+    , Helpers
+    , Schedule
+    , Types
   build-depends:
     , containers
     , mtl
@@ -40,6 +45,7 @@ library
     , libssh2
     , optparse-applicative
     , text
+    , retry
 
 executable hpci-exe
   import:         common-options
@@ -54,12 +60,21 @@ test-suite hpci-test
   import:         common-options
   type:           exitcode-stdio-1.0
   hs-source-dirs: test
-  main-is:        Spec.hs
+  main-is:        Tests.hs
+  other-modules:
+    Props
+    , Specs
+    , Arbitrary
+    , TestHelpers
   build-depends:
-    , hspec
-    , HUnit
     , hpci
-    , QuickCheck
+    , filepath
+    , hspec
+    , tasty
+    , tasty-quickcheck
+    , tasty-hspec >= 1.1.5
+    , bytestring
+    , retry
 
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
 
@@ -72,4 +87,4 @@ benchmark hpci-bench
     , criterion
     , hpci
 
-  ghc-options:    -threaded -rtsopts -with-rtsopts=-N
+ ghc-options:    -threaded -rtsopts -with-rtsopts=-N

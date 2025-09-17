@@ -9,7 +9,7 @@ runHpci opts = do
 
     _            -> runSchedule opts
 
-main :: IO()
+main :: IO ()
 main = do
   opts <- parseOptions
   runHpci opts

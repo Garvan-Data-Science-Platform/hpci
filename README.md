@@ -15,6 +15,7 @@ Generated with [template-haskell](https://github.com/jonascarpay/template-haskel
 ## How to use `hpci`
 
 Documentation is still being developed.
+There is a minimal explanation of the CLI arguments below.
 Contact the maintainer (email details in the `hpci.cabal` file) if you are interested in using `hpci`.
 
 ## Development environment
@@ -22,7 +23,6 @@ Contact the maintainer (email details in the `hpci.cabal` file) if you are inter
 ### If you use `nix`:
 
 This project uses [nix](https://nixos.org/) and [nix flakes](https://nixos.wiki/wiki/flakes) to provide a consistent software environment for development and compilation.
-To get started with `nix` I recommend using the [Determinante Systems nix installer](https://github.com/DeterminateSystems/nix-installer), and the [Zero to Nix](https://zero-to-nix.com/) guide to learning Nix and flakes.
 There is also a `.envrc` file (requires installing [direnv](https://direnv.net/) and [nix-direnv](https://github.com/nix-community/nix-direnv)) to automatically start a nix flake devShell when you `cd` into the directory containing the code from this repo.
 The flake uses `cabal2nix` to generate nix build instructions from the Cabal file, therefore new haskell dependencies can be added via cabal, with no need to adjust the `flake.nix`.
 
@@ -87,6 +87,7 @@ For typical development and testing on an aarch64-darwin machine run:
 - `make PROJECT=[GCP_PROJECT_NAME] pull` to pull docker image
 - `make PROJECT=[GCP_PROJECT_NAME] run` to run OpenPBS docker container.
 - use `docker logs -f pbs` to watch the logs and wait until the sshd server has been restarted.
-- In a seperate terminal run `ls app/*.hs | entr make test` to recompile and run tests eachtime `hpci` haskell files are saved (requires installing [entr](https://github.com/eradman/entr))
+- In a seperate terminal run `ls */*.hs | entr make test` to recompile and run tests eachtime `hpci` haskell files are saved (requires installing [entr](https://github.com/eradman/entr))
+- You can also run the test suite each time a haskell file is saved by running `ls */*.hs | entr cabal test` in a separate terminal window
 - If you are on a x86_84-linux machine, then you can run `make test-bin` to test with the compiled binary
 - `make stop` to stop (and automatically remove) docker container when finished
