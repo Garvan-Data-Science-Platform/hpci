@@ -5,6 +5,7 @@ module Schedule (
   , parseSubmissionResult
 ) where
 
+-- Import from external libraries
 import Control.Concurrent
 import Data.List (intercalate)
 import Data.Maybe (listToMaybe)
@@ -13,6 +14,10 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Map.Strict as Map
+import System.Exit
+import System.FilePath
+
+-- Import from FFI library
 import Network.SSH.Client.LibSSH2 (
   Session
   , sessionClose
@@ -20,9 +25,8 @@ import Network.SSH.Client.LibSSH2 (
   , withChannel)
 import Network.SSH.Client.LibSSH2.Foreign (
   channelExecute)
-import System.Exit
-import System.FilePath
 
+-- Import from other files in this project
 import Cli
 import Helpers (
   defaultRetryPolicy
