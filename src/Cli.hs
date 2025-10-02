@@ -2,6 +2,7 @@
 
 module Cli (
   Options(..)
+  , Scheduler(..)
   , Command(..)
   , Connection(..)
   , User(..)

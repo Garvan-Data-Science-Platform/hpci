@@ -41,24 +41,32 @@ import Types
 mapToString :: Map.Map Text Text -> String
 mapToString = intercalate "," . fmap (\(k, v) -> T.unpack k <> "=" <> T.unpack v) . Map.toList
 
--- Construct the qsub command with options
-constructQsubCommand :: Options -> String
-constructQsubCommand opts =
+-- Construct the job submission command with options
+constructSubmissionCommand :: Scheduler -> Options -> String
+constructSubmissionCommand PBS opts =
   let configString = mapToString (optConfig $ optCommand opts)
-      configArg = if not (Map.null (optConfig $ optCommand opts)) 
-                  then " -v " <> configString 
+      configArg = if not (Map.null (optConfig $ optCommand opts))
+                  then " -v " <> configString
                   else ""
       (Script scriptPath) = script $ optCommand opts
   in "qsub" <> configArg <> " " <> takeFileName scriptPath
+constructSubmissionCommand Slurm opts =
+  let configString = mapToString (optConfig $ optCommand opts)
+      configArg = if not (Map.null (optConfig $ optCommand opts))
+                  then " --export=" <> configString
+                  else ""
+      (Script scriptPath) = script $ optCommand opts
+  in "sbatch" <> configArg <> " " <> takeFileName scriptPath
 
-parseSubmissionResult :: (Int, BSL.ByteString) -> Maybe Types.JobId
-parseSubmissionResult tuple =
-  let
-    parts = BSL8.split '.' . snd $ tuple
-  in
-    case parts of
-      (prefix : _) -> mkJobId $ BSL8.unpack prefix
-      _            -> Nothing
+parseSubmissionResult :: Scheduler -> (Int, BSL.ByteString) -> Maybe Types.JobId
+parseSubmissionResult PBS tuple = do
+  -- PBS returns: "12345.pbs"
+  prefix <- listToMaybe $ BSL8.split '.' (snd tuple)
+  mkJobId $ BSL8.unpack prefix
+parseSubmissionResult Slurm tuple = do
+  -- Slurm returns: "Submitted batch job 12345"
+  jobIdStr <- listToMaybe . reverse . words . BSL8.unpack $ snd tuple
+  mkJobId jobIdStr
 
 -- Parses a field from typical `qstat -xf` response (example below)
 --
@@ -119,13 +127,13 @@ runSchedule opts = do
     -- TODO add zero script size check
 
     -- Submit job using script file
-    putStrLn $ "Qsub command to run on server: " <> constructQsubCommand opts
+    putStrLn $ "Command to run on server: " <> constructSubmissionCommand (scheduler cmdOpts) opts
 
     -- Note: Add retry? I'm torn. I don't want to accidentally schedule multiple concurrent jobs.
     --   Will use improved error handling instead
-    submissionResult <- runCommand session (constructQsubCommand opts <> " 2>&1")
+    submissionResult <- runCommand session (constructSubmissionCommand (scheduler cmdOpts) opts <> " 2>&1")
 
-    let maybeJobId = parseSubmissionResult submissionResult
+    let maybeJobId = parseSubmissionResult (scheduler cmdOpts) submissionResult
 
     case maybeJobId of
       Nothing -> do
