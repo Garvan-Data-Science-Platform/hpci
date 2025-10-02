@@ -90,26 +90,35 @@ findKeyValuePair pairs keyOfInterest =
         Just kv -> Right kv
         Nothing -> Left $ "Key " <> T.unpack keyOfInterest <> " not found"
 
-checkStatus :: Session -> JobId -> String -> IO (Either String T.Text)
-checkStatus s jid keyOfInterest = do
+checkStatus :: Scheduler -> Session -> JobId -> String -> IO (Either String T.Text)
+checkStatus PBS s jid keyOfInterest = do
   jobStatus <- runCommand s ("qstat -fx " <> showJobId jid)
   let statusLines = map (T.strip . T.pack) (tail $ lines (BSL8.unpack $ snd jobStatus))
   let result = findKeyValuePair statusLines (T.pack keyOfInterest)
   case result of
     Right (_,v) -> return $ Right v
     Left err    -> return $ Left err
+checkStatus Slurm s jid keyOfInterest = do
+  -- TODO: need to properly parse Slurm output
+  jobStatus <- runCommand s ("sacct -j " <> showJobId jid <> " --format=State --noheader")
+  let statusLines = map (T.strip . T.pack) (tail $ lines (BSL8.unpack $ snd jobStatus))
+  let result = findKeyValuePair statusLines (T.pack keyOfInterest)
+  case result of
+    Right (_,v) -> return $ Right v
+    Left err    -> return $ Left err
 
-pollUntilFinished :: Connection -> JobId -> Int -> IO ()
-pollUntilFinished connInfo jid interval = do
-  s <- connectWithRetry connInfo
-  r <- checkStatus s jid "job_state"
-  sessionClose s
+pollUntilFinished :: Scheduler -> Connection -> JobId -> Int -> IO ()
+pollUntilFinished schedulerType connInfo jid interval = do
+  -- TODO: need to propery parse Slurm output
+  session <- connectWithRetry connInfo
+  r <- checkStatus schedulerType session jid "job_state"
+  sessionClose session
   case r of
     Right "F" -> putStrLn ("Job " <> showJobId jid <> ": Finished")
     Right status -> do
       putStrLn ("Job status: " <> T.unpack status)
       threadDelay interval
-      pollUntilFinished connInfo jid interval
+      pollUntilFinished schedulerType connInfo jid interval
     Left err -> putStrLn ("Error: " <> err)
 
 -- TODO: error handling for IO and parsing status of job
@@ -147,13 +156,13 @@ runSchedule opts = do
         -- Query job status
         -- TODO: Add timeout?
         -- TODO: add user defined poll interval with default
-        pollUntilFinished connInfo jobId 20000000
+        pollUntilFinished (scheduler cmdOpts) connInfo jobId 20000000
 
         -- Get exit status
         wrap_up_session <- connectWithRetry connInfo
 
     -- Add retry? here it is retrying parsing etc
-        exitStatus <- checkStatus wrap_up_session jobId "Exit_status"
+        exitStatus <- checkStatus (scheduler cmdOpts) wrap_up_session jobId "Exit_status"
         -- Copy logs file off server to ci
         logSize <- scpReceiveFileRetry defaultRetryPolicy wrap_up_session (logFile cmdOpts)
         let (LogFile logPath) = logFile cmdOpts
