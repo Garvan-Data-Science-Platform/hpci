@@ -65,7 +65,7 @@
                 haskell-language-server
                 cabal-install
                 cabal2nix
-              ] ++ [ pkgs.zlib ];
+              ] ++ [ pkgs.zlib pkgs.entr];
               inputsFrom = builtins.attrValues self.packages.${system};
             };
         in
