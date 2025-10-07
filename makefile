@@ -22,7 +22,7 @@ SCHEDULE_SLURM_ARGS=--user slurmuser \
 			  --privateKey test_key \
 			  schedule \
 			  --scheduler slurm \
-			  --script ci/test_job.pbs \
+			  --script ci/test_job.slurm \
 			  --logFile test_job.log \
 			  -c TEST_VAR1=success,TEST_VAR2=double_success
 
