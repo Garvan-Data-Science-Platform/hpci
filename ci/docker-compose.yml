@@ -56,12 +56,11 @@ services:
       - hpc_test_network
 
   c1:
-    image: slurm-docker-cluster:${SLURM_VERSION:-25.05.3}
+    image: slurm-node:latest
     build:
       context: .
-      args:
-        SLURM_TAG: ${SLURM_TAG:-slurm-25-05-3-1}
-    command: ["slurmd"]
+      dockerfile: Dockerfile.slurm
+    entrypoint: ["/bin/bash", "-c", "/usr/local/bin/start-ssh.sh && /usr/local/bin/docker-entrypoint.sh slurmd"]
     hostname: c1
     container_name: c1
     volumes:

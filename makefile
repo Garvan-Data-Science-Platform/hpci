@@ -5,12 +5,23 @@ IMAGE:=pbs
 DOCKER_TAG:=$(REGISTRY)$(IMAGE):latest
 EXEC_COMMAND:=pwd
 
-SCHEDULE_ARGS=--user pbsuser \
+SCHEDULE_PBS_ARGS=--user pbsuser \
 			  --host 127.0.0.1 \
 			  --port 2222 \
 			  --publicKey test_key.pub \
 			  --privateKey test_key \
 			  schedule \
+			  --script ci/test_job.pbs \
+			  --logFile test_job.log \
+			  -c TEST_VAR1=success,TEST_VAR2=double_success
+
+SCHEDULE_SLURM_ARGS=--user slurmuser \
+			  --host 127.0.0.1 \
+			  --port 2223 \
+			  --publicKey test_key.pub \
+			  --privateKey test_key \
+			  schedule \
+			  --scheduler slurm \
 			  --script ci/test_job.pbs \
 			  --logFile test_job.log \
 			  -c TEST_VAR1=success,TEST_VAR2=double_success
@@ -49,9 +60,16 @@ interact: ## Start interactive terminal access to running docker container
 .PHONY: test
 test: test-schedule test-exec # Run cabal tests
 
-.PHONY: test
-test-schedule: ## Compile HPCI and test the schedule command with dockerised OpenPBS (requires `make run` first)
-	cabal run exes -- $(SCHEDULE_ARGS)
+.PHONY: test-pbs-schedule
+test-pbs-schedule: ## Compile HPCI and test the schedule command with dockerised OpenPBS (requires `make run` first)
+	cabal run exes -- $(SCHEDULE_PBS_ARGS)
+
+.PHONY: test-slurm-schedule
+test-slurm-schedule: ## Compile HPCI and test the schedule command with dockerised Slurm (requires `make run` first)
+	cabal run exes -- $(SCHEDULE_SLURM_ARGS)
+
+.PHONY: test-schedule
+test-schedule: test-pbs-schedule test-slurm-schedule # Run cabal tests
 
 .PHONY: test-exec
 test-exec: ## Compile HPCI and test the exec command with dockerised OpenPBS (requires `make run` first)
@@ -62,7 +80,7 @@ test-bin: test-bin-schedule test-bin-exec # Run tests on binary
 
 .PHONY: test-bin-schedule
 test-bin-schedule: ## Test HPCI binary and test schedule command with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
-	result/bin/hpci-exe $(SCHEDULE_ARGS)
+	result/bin/hpci-exe $(SCHEDULE_PBS_ARGS)
 
 .PHONY: test-bin-exec
 test-bin-exec: ## Test HPCI binary and test exec command with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
