@@ -68,6 +68,16 @@ parseSubmissionResult Slurm tuple = do
   jobIdStr <- listToMaybe . reverse . words . BSL8.unpack $ snd tuple
   mkJobId jobIdStr
 
+-- Define the different status queries
+data StatusType = JobState | JobExitCode
+
+-- Map the statusTypes for each scheduler to their specific keys
+getKey :: Scheduler -> StatusType -> String
+getKey PBS JobState       = "job_state"
+getKey PBS JobExitCode    = "Exit_status"
+getKey Slurm JobState     = "State"
+getKey Slurm JobExitCode  = "DerivedExitCode"
+
 -- Parses a field from typical `qstat -xf` response (example below)
 --
 --   ```
@@ -90,36 +100,43 @@ findKeyValuePair pairs keyOfInterest =
         Just kv -> Right kv
         Nothing -> Left $ "Key " <> T.unpack keyOfInterest <> " not found"
 
-checkStatus :: Scheduler -> Session -> JobId -> String -> IO (Either String T.Text)
-checkStatus PBS s jid keyOfInterest = do
+checkStatus :: Scheduler -> Session -> JobId -> StatusType -> IO (Either String T.Text)
+checkStatus PBS s jid statusType = do
   jobStatus <- runCommand s ("qstat -fx " <> showJobId jid)
   let statusLines = map (T.strip . T.pack) (tail $ lines (BSL8.unpack $ snd jobStatus))
-  let result = findKeyValuePair statusLines (T.pack keyOfInterest)
+  let result = findKeyValuePair statusLines (T.pack $ getKey PBS statusType)
   case result of
     Right (_,v) -> return $ Right v
     Left err    -> return $ Left err
-checkStatus Slurm s jid keyOfInterest = do
-  -- TODO: need to properly parse Slurm output
-  jobStatus <- runCommand s ("sacct -j " <> showJobId jid <> " --format=State --noheader")
-  let statusLines = map (T.strip . T.pack) (tail $ lines (BSL8.unpack $ snd jobStatus))
-  let result = findKeyValuePair statusLines (T.pack keyOfInterest)
-  case result of
-    Right (_,v) -> return $ Right v
-    Left err    -> return $ Left err
+checkStatus Slurm s jid statusType = do
+  jobStatus <- runCommand s ("sacct -j " <> showJobId jid <> " --format=" <> getKey Slurm statusType <> " --noheader -P -X")
+  let status = head $ T.split (==':') $ T.strip . T.pack . BSL8.unpack $ snd jobStatus
+  return $ Right status
+
+-- TODO: check if I need to also support short codes CA, CD, F, OOM, TO
+isFinished :: Scheduler -> Text -> Bool
+isFinished PBS "F" = True
+isFinished Slurm "COMPLETED"     = True
+isFinished Slurm "FAILED"        = True
+isFinished Slurm "TIMEOUT"       = True
+isFinished Slurm "OUT_OF_MEMORY" = True
+isFinished Slurm "CANCELLED"     = True
+isFinished Slurm "NODE_FAIL"     = True
+isFinished _ _ = False
 
 pollUntilFinished :: Scheduler -> Connection -> JobId -> Int -> IO ()
 pollUntilFinished schedulerType connInfo jid interval = do
-  -- TODO: need to propery parse Slurm output
   session <- connectWithRetry connInfo
-  r <- checkStatus schedulerType session jid "job_state"
+  r <- checkStatus schedulerType session jid JobState
   sessionClose session
   case r of
-    Right "F" -> putStrLn ("Job " <> showJobId jid <> ": Finished")
-    Right status -> do
-      putStrLn ("Job status: " <> T.unpack status)
-      threadDelay interval
-      pollUntilFinished schedulerType connInfo jid interval
     Left err -> putStrLn ("Error: " <> err)
+    Right status
+      | isFinished schedulerType status -> putStrLn ("Job " <> showJobId jid <> ": Finished")
+      | otherwise                       -> do
+          putStrLn ("Job status: " <> T.unpack status)
+          threadDelay interval
+          pollUntilFinished schedulerType connInfo jid interval
 
 -- TODO: error handling for IO and parsing status of job
 runSchedule :: Options -> IO()
@@ -162,7 +179,7 @@ runSchedule opts = do
         wrap_up_session <- connectWithRetry connInfo
 
     -- Add retry? here it is retrying parsing etc
-        exitStatus <- checkStatus (scheduler cmdOpts) wrap_up_session jobId "Exit_status"
+        exitStatus <- checkStatus (scheduler cmdOpts) wrap_up_session jobId JobExitCode
         -- Copy logs file off server to ci
         logSize <- scpReceiveFileRetry defaultRetryPolicy wrap_up_session (logFile cmdOpts)
         let (LogFile logPath) = logFile cmdOpts
