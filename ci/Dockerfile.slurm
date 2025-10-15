@@ -1,13 +1,12 @@
-FROM slurm-docker-cluster:25.05.3
+FROM ghcr.io/neilmunday/rocky8-slurm:latest
 
 USER root
 
 # Install OpenSSH server
-RUN set -ex \
-    && yum -y update \
-    && yum -y install openssh-server
+RUN dnf -y update && \
+    dnf -y install openssh-server
 
-COPY ./slurm-start-ssh.sh /usr/local/bin/start-ssh.sh
+COPY ./rocky8-slurm-start-ssh.sh /usr/local/bin/start-ssh.sh
 
 RUN chmod +x /usr/local/bin/start-ssh.sh
 

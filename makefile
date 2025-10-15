@@ -15,7 +15,7 @@ SCHEDULE_PBS_ARGS=--user pbsuser \
 			  --logFile test_job.log \
 			  -c TEST_VAR1=success,TEST_VAR2=double_success
 
-SCHEDULE_SLURM_ARGS=--user slurmuser \
+SCHEDULE_SLURM_ARGS=--user root \
 			  --host 127.0.0.1 \
 			  --port 2223 \
 			  --publicKey test_key.pub \
