@@ -14,5 +14,3 @@ cp /tmp/authorized_keys /home/slurmuser/.ssh/authorized_keys
 chmod 700 /home/slurmuser/.ssh
 chmod 644 /home/slurmuser/.ssh/authorized_keys
 chown -R slurmuser:slurmuser /home/slurmuser/.ssh
-
-slurmd
