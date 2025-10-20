@@ -26,9 +26,9 @@ SCHEDULE_SLURM_ARGS=--user root \
 			  --logFile test_job.log \
 			  -c TEST_VAR1=success,TEST_VAR2=double_success
 
-EXEC_ARGS=--user root \
+EXEC_ARGS=--user pbsuser \
 			--host 127.0.0.1 \
-			--port 2223 \
+			--port 2222 \
 			--publicKey test_key.pub \
 			--privateKey test_key \
 			exec $(EXEC_COMMAND)
