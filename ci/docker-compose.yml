@@ -20,8 +20,9 @@ services:
 
   pbs:
     image: australia-southeast1-docker.pkg.dev/nci-automation/docker/pbs:latest
-    container_name: pbs
     hostname: pbs
+    container_name: pbs
+    platform: linux/amd64
     ports:
       - "2222:22"
     depends_on:

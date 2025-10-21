@@ -43,7 +43,7 @@ pull: ## Pull a docker image from artifact registry (useful on non-x86_64 machin
 
 .PHONY: up
 up: ## Start a OpenPBS server and ssh server inside docker container (This requires creating an ssh key called `test_key` in the root of the `hpci` directory).
-	docker compose -d -f ci/docker-compose.yml up
+	docker compose -f ci/docker-compose.yml up -d
 
 .PHONY: interact
 interact: ## Start interactive terminal access to running docker container
