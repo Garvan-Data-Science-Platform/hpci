@@ -56,8 +56,8 @@ jobs:
           chmod 600 test_key*
 
       - name: Start Dockerised PBS and Slurm
-        run: make up
-
+        run: |
+          make up
           while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 1 ]
           do
           echo "Waiting for PBS node to become available";
