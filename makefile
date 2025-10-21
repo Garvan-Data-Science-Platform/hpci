@@ -35,23 +35,15 @@ EXEC_ARGS=--user pbsuser \
 
 .PHONY: docker
 docker: ## Build a docker image. Only works on x86_64-linux. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah docker`).
-	docker build -t $(DOCKER_TAG) ci
+	docker build -t $(DOCKER_TAG) -f Dockerfile ci
 
 .PHONY: pull
 pull: ## Pull a docker image from artifact registry (useful on non-x86_64 machines. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah pull`).
 	docker pull --platform linux/amd64 $(DOCKER_TAG)
 
-.PHONY: run
-run: ## Start a OpenPBS server and ssh server inside docker container (This requires creating an ssh key called `test_key` in the root of the `hpci` directory). Provide PROJECT argument on commandline (e.g. `make PROJECT=blah run`).
-	docker run \
-	--platform linux/amd64 \
-	-d \
-	--rm \
-	-p 2222:22 \
-	--name $(IMAGE) \
-	-h pbs_container \
-	-v ./test_key.pub:/tmp/authorized_keys:ro \
-	$(DOCKER_TAG)
+.PHONY: up
+up: ## Start a OpenPBS server and ssh server inside docker container (This requires creating an ssh key called `test_key` in the root of the `hpci` directory).
+	docker compose -d -f ci/docker-compose.yml up
 
 .PHONY: interact
 interact: ## Start interactive terminal access to running docker container
@@ -61,29 +53,36 @@ interact: ## Start interactive terminal access to running docker container
 test: test-schedule test-exec # Run cabal tests
 
 .PHONY: test-pbs-schedule
-test-pbs-schedule: ## Compile HPCI and test the schedule command with dockerised OpenPBS (requires `make run` first)
+test-pbs-schedule: ## Compile HPCI and test the schedule command with dockerised OpenPBS (requires `make up` first)
 	cabal run exes -- $(SCHEDULE_PBS_ARGS)
 
 .PHONY: test-slurm-schedule
-test-slurm-schedule: ## Compile HPCI and test the schedule command with dockerised Slurm (requires `make run` first)
+test-slurm-schedule: ## Compile HPCI and test the schedule command with dockerised Slurm (requires `make up` first)
 	cabal run exes -- $(SCHEDULE_SLURM_ARGS)
 
 .PHONY: test-schedule
 test-schedule: test-pbs-schedule test-slurm-schedule # Run cabal tests
 
 .PHONY: test-exec
-test-exec: ## Compile HPCI and test the exec command with dockerised OpenPBS (requires `make run` first)
+test-exec: ## Compile HPCI and test the exec command with dockerised OpenPBS (requires `make up` first)
 	cabal run exes -- $(EXEC_ARGS)
 
 .PHONY: test-bin
 test-bin: test-bin-schedule test-bin-exec # Run tests on binary
 
 .PHONY: test-bin-schedule
-test-bin-schedule: ## Test HPCI binary and test schedule command with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
+test-bin-schedule: test-bin-pbs-schedule test-bin-slurm-schedule
+
+.PHONY: test-bin-pbs-schedule
+test-bin-pbs-schedule: ## Test HPCI binary and test schedule command with dockerised OpenPBS (requires `make up`, and `nix build .#packages.x86_64-linux.hpci` first)
 	result/bin/hpci-exe $(SCHEDULE_PBS_ARGS)
 
+.PHONY: test-bin-slurm-schedule
+test-bin-slurm-schedule: ## Test HPCI binary and test schedule command with dockerised Slurm (requires `make up`, and `nix build .#packages.x86_64-linux.hpci` first)
+	result/bin/hpci-exe $(SCHEDULE_SLURM_ARGS)
+
 .PHONY: test-bin-exec
-test-bin-exec: ## Test HPCI binary and test exec command with dockerised OpenPBS (requires `make run`, and `nix build .#packages.x86_64-linux.hpci` first)
+test-bin-exec: ## Test HPCI binary and test exec command with dockerised OpenPBS (requires `make up`, and `nix build .#packages.x86_64-linux.hpci` first)
 	result/bin/hpci-exe $(EXEC_ARGS)
 
 .PHONY: build
@@ -106,9 +105,9 @@ delete-bin: ## Delete binary from gcp artifact registry - requires VERSION
 		--package=hpci \
 		--repository=generic
 
-.PHONY: stop
-stop: ## Stop the running docker container
-	docker stop $(IMAGE)
+.PHONY: down
+down: ## Stop the running docker container
+	docker compose -f ci/docker-compose.yml down
 
 .PHONY: help
 help: ## Display available commands

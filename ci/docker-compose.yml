@@ -1,83 +1,22 @@
 services:
-  mysql:
-    image: mariadb:10.11
-    hostname: mysql
-    container_name: mysql
-    environment:
-      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
-      MYSQL_DATABASE: slurm_acct_db
-      MYSQL_USER: slurm
-      MYSQL_PASSWORD: password
-    volumes:
-      - var_lib_mysql:/var_lib/mysql
-    networks:
-      - hpc_test_network
-
-  slurmdbd:
-    image: slurm-docker-cluster:${SLURM_VERSION:-25.05.3}
-    build:
-      context: .
-      args:
-        SLURM_TAG: ${SLURM_TAG:-slurm-25-05-3-1}
-    command: ["slurmdbd"]
-    container_name: slurmdbd
-    hostname: slurmdbd
-    volumes:
-      - etc_munge:/etc/munge
-      - etc_slurm:/etc/slurm
-      - var_log_slurm:/var/log/slurm
-    expose:
-      - "6819"
-    depends_on:
-      - mysql
-    networks:
-      - hpc_test_network
-
-  slurmctld:
-    image: slurm-docker-cluster:${SLURM_VERSION:-25.05.3}
-    build:
-      context: .
-      args:
-        SLURM_TAG: ${SLURM_TAG:-slurm-25-05-3-1}
-    command: ["slurmctld"]
-    container_name: slurmctld
-    hostname: slurmctld
-    volumes:
-      - etc_munge:/etc/munge
-      - etc_slurm:/etc/slurm
-      - slurm_jobdir:/data
-      - var_log_slurm:/var/log/slurm
-      - ../../slurm-docker-cluster/cgroup.conf:/etc/slurm/cgroup.conf # <-- ADICIONADO AQUI
-    expose:
-      - "6817"
-    depends_on:
-      - "slurmdbd"
-    networks:
-      - hpc_test_network
-
-  c1:
-    image: slurm-node:latest
+  slurm:
+    # image: rocky8-slurm-hpci:latest
     build:
       context: .
       dockerfile: Dockerfile.slurm
-    entrypoint: ["/bin/bash", "-c", "/usr/local/bin/start-ssh.sh && /usr/local/bin/docker-entrypoint.sh slurmd"]
-    hostname: c1
-    container_name: c1
+    entrypoint: ["/usr/bin/tini", "--"]
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "/usr/local/bin/start-ssh.sh && exec /usr/local/sbin/entrypoint.sh tail -f /dev/null"
+    hostname: slurm
+    container_name: slurm
+    platform: linux/amd64
     volumes:
-      - etc_munge:/etc/munge
-      - etc_slurm:/etc/slurm
-      - slurm_jobdir:/data
-      - var_log_slurm:/var/log/slurm
-      - ../../slurm-docker-cluster/cgroup.conf:/etc/slurm/cgroup.conf # <-- ADICIONADO AQUI
+      - ./cgroup.conf:/etc/slurm/cgroup.conf
       - ../test_key.pub:/tmp/authorized_keys:ro
-    expose:
-      - "6818"
     ports:
       - "2223:22"
-    depends_on:
-      - "slurmctld"
-    networks:
-      - hpc_test_network
 
   pbs:
     image: australia-southeast1-docker.pkg.dev/nci-automation/docker/pbs:latest
@@ -85,18 +24,7 @@ services:
     hostname: pbs
     ports:
       - "2222:22"
+    depends_on:
+      - slurm
     volumes:
       - ../test_key.pub:/tmp/authorized_keys:ro
-    networks:
-      - hpc_test_network
-
-volumes:
-  etc_munge:
-  etc_slurm:
-  slurm_jobdir:
-  var_lib_mysql:
-  var_log_slurm:
-
-networks:
-  hpc_test_network:
-    driver: bridge
