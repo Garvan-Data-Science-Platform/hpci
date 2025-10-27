@@ -5,89 +5,54 @@
 `hpci` is a tool to integrate Continuous Integration (CI) with High Performance Compute (HPC).
 
 Install `hpci` on your CI runner, and `hpci` can schedule and monitor jobs on HPC.
-When a job has finished, the job's exit status code is recorded.
+When you job has finished, the job's exit status code is recorded.
 
 `hpci` will copy log files from HPC to the CI runner, print these to the CI logs.
 Then `hpci` will exit will the same exit status code as the job on HPC, therefore CI will crash if the job on HPC fails.
 
-Generated with [template-haskell](https://github.com/jonascarpay/template-haskell)
+`hpci` is designed to be easily used with different CI platforms and different HPC clusters.
 
 ## How to use `hpci`
 
-Documentation is still being developed.
-There is a minimal explanation of the CLI arguments below.
-Contact the maintainer (email details in the `hpci.cabal` file) if you are interested in using `hpci`.
+1. Download `hpci` to your CI runner.
+You can either add `hpci` to your deployed runner vm, or include a download step as part of your CI workflow.
+You can also download it locally for testing, but it is intended to be used on CI runner.
 
-## Development environment
+```
+  wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/download/v0.0.5/hpci-exe
+```
 
-### If you use `nix`:
+Either add the binary to your path, or download to a specific location by using wget with `--directory-prefix=`.
+For this README, I'll use `/usr/local/bin/` as example location
 
-This project uses [nix](https://nixos.org/) and [nix flakes](https://nixos.wiki/wiki/flakes) to provide a consistent software environment for development and compilation.
-There is also a `.envrc` file (requires installing [direnv](https://direnv.net/) and [nix-direnv](https://github.com/nix-community/nix-direnv)) to automatically start a nix flake devShell when you `cd` into the directory containing the code from this repo.
-The flake uses `cabal2nix` to generate nix build instructions from the Cabal file, therefore new haskell dependencies can be added via cabal, with no need to adjust the `flake.nix`.
+2. Ensure binary is executable
 
-The `flake.nix` file is configured to work for both x86_64-linux and aarch-darwin architecture + operating systems, however the set up is slightly different between them:
-  - the x86_64-linux development environment uses a version of GHC that has been compiled against `musl` rather than `glibc`.
-    - This allows generation of a statically linked Haskell executable (see [this blog post for more details](https://cs-syd.eu/posts/2024-04-20-static-linking-haskell-nix)).
-    - I am not currently using linux for my day-to-day development on this project, rather I am using this exclusively for generating portable executables.
-  
-  - the aarch64-darwin development environment does not use musl-linked packages.
+```
+chmod +x /usr/local/bin/hpci-exe
+```
 
-If you do not set up `direnv` (see links above), activate a nix development environment using `nix develop .#devShells.x86_64-linux` or `nix develop .#devShells.aarch64-darwin` depending on your architecture + operating system.
+3. Run `hpci`
 
-To build a statically linked executable on x86_64-linux use `nix build .#packages.x86_64-linux.hpci`.
-
-To build a dynamically linked executable on aarch64-darwin use `cabal build` inside the flake devShell.
-
-### If you do not use `nix`:
-
-You do not need nix to run the code, all you need is the Glascow Haskell Compiler (GHC) and Cabal package manager.
-These can been downloaded using [GHCup](https://www.haskell.org/ghcup/).
-
-To compile and run the program, use `cabal run exes --` followed by the following required arguments:
+`/usr/local/bin/hpci-exe` followed by the following required arguments:
   - --user       *username on remote system*
   - --host       *IP address or domain name or remote host*
   - --port       *port declaration - typically 22*
   - --publickey  *local filepath for ssh public key*
   - --privatekey *local filepath for ssh private key*
   schedule       *to schedule a job on HPC* 
-  - --script     *local filepath of `.pbs` script to accomany the `qsub` command*
-  - --logFile    *remote filepath of logfile produced by `.pbs` script to copy back to local system*
-  - -c           ***Optional*** *Configuration in the form of `KEY1=VALUE1,KEY2=VALUE2` that is passed to `qsub` when submitting the job*
+  - --script     *local filepath of job scheduler script*
+  - --logFile    *remote filepath of logfile produced by job scheduler script to copy back to local system*
+  - -c           ***Optional*** *Configuration in the form of `KEY1=VALUE1,KEY2=VALUE2` that is passed to job scheduler when submitting the job*
 
-  OR 
+## Security
 
-  - --user       *username on remote system*
-  - --host       *IP address or domain name or remote host*
-  - --port       *port declaration - typically 22*
-  - --publickey  *local filepath for ssh public key*
-  - --privatekey *local filepath for ssh private key*
-  exec "command" *to run a command on HPC* 
+I recommend creating an ssh key specifically for use with `hpci` so you can easily revoke access, and cycle keys.
 
-## Testing in CI
+Other steps you can take to increase security:
+  - use self-hosted, ephemeral runners
+  - use CI secrets for as many variables as possible (e.g. username, host)
+  - use a cloud secret manager to store ssh-keys 
 
-Integration tests are run against a version of OpenPBS dockerised along with an openssh server.
-The code for building the docker image (and associated scripts) are in the `ci` directory.
-It is tricky to build this image on aarch64-darwin as building the docker image involves compiling OpenPBS from source.
+## Acknowlegements
 
-The `.github/workflows/build-pbs.yml` workflow file builds the image in ci (only if there has been a change to code in the `ci` directory, or the `build-pbs.yml` workflow file) and pushes the image to a GCP artifact registry.
-The `.github/workflows/build-test.yml` builds a fully statically linked version of `hpci`, pulls the test docker image, and runs the new `hpci` binary to connect to the OpenPBS docker container and run a basic job submission.
-
-## Testing locally
-
-Create a ssh key called `test_key` at the root of the `hpci` repository with `ssh-keygen -t ed25519 -C "hpci_test_key" -f ./test_key`.
-
-The `makefile` has convenience commands for local testing.
-A summary of commands can be accessed using `make help`.
-
-For typical development and testing on an aarch64-darwin machine run:
-- ` gcloud auth login --project [GCP_PROJECT_NAME]`
-- ` gcloud auth configure-docker [GCP_REGION]-docker.pkg.dev/[GCP_PROJECT_NAME]/docker`
-- Make sure you have a container runtime like docker desktop or [colima](https://github.com/abiosoft/colima)
-- `make PROJECT=[GCP_PROJECT_NAME] pull` to pull docker image
-- `make PROJECT=[GCP_PROJECT_NAME] run` to run OpenPBS docker container.
-- use `docker logs -f pbs` to watch the logs and wait until the sshd server has been restarted.
-- In a seperate terminal run `ls */*.hs | entr make test` to recompile and run tests eachtime `hpci` haskell files are saved (requires installing [entr](https://github.com/eradman/entr))
-- You can also run the test suite each time a haskell file is saved by running `ls */*.hs | entr cabal test` in a separate terminal window
-- If you are on a x86_84-linux machine, then you can run `make test-bin` to test with the compiled binary
-- `make stop` to stop (and automatically remove) docker container when finished
+This repo was initialised with [template-haskell](https://github.com/jonascarpay/template-haskell)

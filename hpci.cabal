@@ -1,12 +1,12 @@
 cabal-version:   2.4
 name:            hpci
-version:         0.0.3
+version:         0.0.5
 license:         GPL-3.0-or-later
 build-type:      Simple
 license-file:    LICENSE
 author:          ignatiusm
 maintainer:      ignatiusm <i.menzies@garvan.org.au>
-copyright:       2024 Garvan Institute for Medical Research
+copyright:       2025 Garvan Institute for Medical Research
 tested-with:     GHC ==9.4.8
 extra-doc-files:
   CHANGELOG.md
