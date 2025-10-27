@@ -2,6 +2,7 @@
 
 module Cli (
   Options(..)
+  , Scheduler(..)
   , Command(..)
   , Connection(..)
   , User(..)
@@ -18,6 +19,7 @@ module Cli (
 
 import Data.Bifunctor (first)
 import Data.Text (Text)
+import Data.Char (toLower)
 import qualified Data.Text as T
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -40,8 +42,11 @@ data Options = Options {
   , optCommand   :: Command
 } deriving (Show)
 
+data Scheduler = PBS | Slurm deriving (Show, Eq)
+
 data Command
   = Schedule {
+      scheduler      :: Scheduler,
       script         :: Script,
       logFile        :: LogFile,
       optConfig      :: KeyValuePairs }
@@ -67,7 +72,7 @@ scheduleCommand =
 
 scheduleOptions :: Parser Command
 scheduleOptions =
-    Schedule <$> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption)
+    Schedule <$> schedulerParser <*> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption)
 
 execCommand :: Mod CommandFields Command
 execCommand =
@@ -86,6 +91,21 @@ connectionParser = Connection <$> userParser <*> hostParser <*> portParser <*> p
     portParser = Port <$> option auto (long "port" <> help "Port number" <> metavar "INT")
     publicKeyParser = PublicKey <$> strOption (long "publicKey" <> help "Public ssh key file path")
     privateKeyParser = PrivateKey <$> strOption (long "privateKey" <> help "Private ssh key file path")
+
+schedulerParser :: Parser Scheduler
+schedulerParser = option (maybeReader parseScheduler)
+  (long "scheduler"
+  <> short 's'
+  <> metavar "SCHEDULER"
+  <> value PBS -- Default for backward compatibility
+  <> showDefault
+  <> help "Name of HPC scheduler (pbs,slurm)")
+  where
+    parseScheduler :: String -> Maybe Scheduler
+    parseScheduler s = case toLower <$> s of
+      "pbs"   -> Just PBS
+      "slurm" -> Just Slurm
+      _       -> Nothing
 
 scriptParser :: Parser Script
 scriptParser = Script <$> strOption (long "script")

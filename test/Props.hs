@@ -11,12 +11,13 @@ import TestHelpers (
 import Arbitrary()
 
 import Schedule (parseSubmissionResult)
+import Cli
 
 -- Test parseSubmissionResult
 prop_extractsJobId :: JobId -> Bool
 prop_extractsJobId jobId =
   let
-    parsedResult = parseSubmissionResult (0, BSL8.pack (showJobId jobId <> ".pbs"))
+    parsedResult = parseSubmissionResult PBS (0, BSL8.pack (showJobId jobId <> ".pbs"))
   in
     parsedResult == Just jobId
 
@@ -25,7 +26,7 @@ prop_JobId_all_digits malformedInput =
   let
     testInput = (0, getMalformedBS malformedInput)
 
-    result = parseSubmissionResult testInput
+    result = parseSubmissionResult PBS testInput
   in
     result == Nothing
 

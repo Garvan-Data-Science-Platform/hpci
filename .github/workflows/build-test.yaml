@@ -55,21 +55,14 @@ jobs:
           echo "$TEST_KEY" > test_key
           chmod 600 test_key*
 
-      - name: Start Dockerised PBS
+      - name: Start Dockerised PBS and Slurm
         run: |
-          docker run \
-            -d --rm \
-            -p 2222:22 \
-            --name pbs \
-            -h pbs_container \
-            --mount type=bind,source=$(pwd)/test_key.pub,target=/tmp/authorized_keys \
-            ${{env.LOCATION}}-docker.pkg.dev/${{secrets.PROJECT_ID}}/docker/pbs:latest
-
-          while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs_container" | wc -l` -ne 1 ]
+          make up-d
+          while [ `docker exec -u pbsuser pbs pbsnodes -a | grep "Mom = pbs" | wc -l` -ne 1 ]
           do
-            echo "Waiting for PBS node to become available";
-            docker logs --tail 1 pbs
-            sleep 5
+          echo "Waiting for PBS node to become available";
+          docker logs --tail 1 pbs
+          sleep 10
           done
           echo "PBS properly configured"
 
@@ -91,6 +84,5 @@ jobs:
 
       - name: Clean up
         run: |
-          docker stop pbs
-          docker image prune -f
+          make down
           rm test_key*
