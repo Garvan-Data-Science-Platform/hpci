@@ -6,8 +6,8 @@ build-type:      Simple
 license-file:    LICENSE
 author:          ignatiusm
 maintainer:      ignatiusm <i.menzies@garvan.org.au>
-copyright:       2025 Garvan Institute for Medical Research
-tested-with:     GHC ==9.4.8
+copyright:       2026 Garvan Institute for Medical Research
+tested-with:     GHC ==9.8.4
 extra-doc-files:
   CHANGELOG.md
   README.md
@@ -66,6 +66,7 @@ test-suite hpci-test
     , Specs
     , Arbitrary
     , TestHelpers
+    , Integrations
   build-depends:
     , hpci
     , filepath
@@ -75,6 +76,10 @@ test-suite hpci-test
     , tasty-hspec >= 1.1.5
     , bytestring
     , retry
+    , testcontainers >= 0.5.2.0
+    , text
+    , process
+    , directory
 
   ghc-options:    -threaded -rtsopts -with-rtsopts=-N
 
@@ -87,4 +92,4 @@ benchmark hpci-bench
     , criterion
     , hpci
 
- ghc-options:    -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:    -threaded -rtsopts -with-rtsopts=-N
