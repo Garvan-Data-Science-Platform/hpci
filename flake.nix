@@ -2,7 +2,7 @@
   description = "hpci";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/release-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/release-25.11";
   };
 
   outputs = { self, nixpkgs }:
@@ -19,7 +19,7 @@
             let
               pkgs = pkgsForSystem system;
               static_ssl = (pkgs.openssl.override { static = true; });
-              haskellPackages = pkgs.haskell.packages.ghc948;
+              haskellPackages = pkgs.haskell.packages.ghc98;
               packageName = "hpci";
               jailbreakUnbreak = pkg: pkgs.haskell.lib.doJailbreak (pkg.overrideAttrs (_: { meta = { }; }));
               inherit (pkgs.haskell.lib) appendConfigureFlags justStaticExecutables;
@@ -59,13 +59,12 @@
         let
           devShellForSystem = system:
             let pkgs = pkgsForSystem system;
-                haskellPackages = pkgs.haskell.packages.ghc948;
+                haskellPackages = pkgs.haskell.packages.ghc98;
             in pkgs.mkShell {
               buildInputs = with haskellPackages; [
-                haskell-language-server
                 cabal-install
                 cabal2nix
-              ] ++ [ pkgs.zlib pkgs.entr];
+              ] ++ [ pkgs.zlib pkgs.entr pkgs.haskell-language-server ];
               inputsFrom = builtins.attrValues self.packages.${system};
             };
         in
