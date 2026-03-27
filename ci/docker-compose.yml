@@ -4,11 +4,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.slurm
-    entrypoint: ["/usr/bin/tini", "--"]
-    command:
-      - "/bin/sh"
-      - "-c"
-      - "/usr/local/bin/start-ssh.sh && exec /usr/local/sbin/entrypoint.sh tail -f /dev/null"
+    # entrypoint: ["/usr/bin/tini", "--"]
+    # command:
+    #   - "/bin/sh"
+    #   - "-c"
+    #   - "/usr/local/bin/start-ssh.sh && exec /usr/local/sbin/entrypoint.sh tail -f /dev/null"
     hostname: slurm
     container_name: slurm
     platform: linux/amd64

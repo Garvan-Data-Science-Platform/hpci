@@ -12,3 +12,5 @@ COPY ./rocky8-slurm-start-ssh.sh /usr/local/bin/start-ssh.sh
 RUN chmod +x /usr/local/bin/start-ssh.sh
 
 EXPOSE 22
+
+ENTRYPOINT ["/bin/sh", "-c", "/usr/local/bin/start-ssh.sh && exec /usr/local/sbin/entrypoint.sh tail -f /dev/null"]
