@@ -59,7 +59,7 @@ integrationSpec = describe "Docker Integration Tests" $ do
     --   output <- runInContainer pbs ["pbsnodes", "--version"]
     --   pack output `shouldSatisfy` ("version" `isInfixOf`)
 
-    it "crashes when there is a job submission error" $ \(slurm, _pbs) -> do
+    it "crashes when there is a slurm submission error" $ \(slurm, _pbs) -> do
       let port = show $ D.containerPort slurm 22
 
       let args = [ "--user", "root"
@@ -70,6 +70,25 @@ integrationSpec = describe "Docker Integration Tests" $ do
 			           , "schedule"
 			           , "--scheduler", "slurm"
 			           , "--script", "ci/test_fail.slurm"
+			           , "--logFile", "test_job.log"
+			           , "-c", "TEST_VAR1=success,TEST_VAR2=double_success"
+                ]
+
+      (exitCode, stdout, stderr) <- runHpci args
+
+      exitCode `shouldBe` ExitFailure 1
+
+    it "crashes when there is a pbs job submission error" $ \(_slurm, pbs) -> do
+      let port = show $ D.containerPort pbs 22
+
+      let args = [ "--user", "pbsuser"
+			           , "--host", "127.0.0.1"
+			           , "--port", port
+			           , "--publicKey", "test_key.pub"
+			           , "--privateKey", "test_key"
+			           , "schedule"
+			           , "--scheduler", "pbs"
+			           , "--script", "ci/test_fail.pbs"
 			           , "--logFile", "test_job.log"
 			           , "-c", "TEST_VAR1=success,TEST_VAR2=double_success"
                 ]
