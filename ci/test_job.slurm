@@ -1,5 +1,5 @@
 #! /bin/bash
-#SBATCH --job-name testjob
+#SBATCH --job-name=testjob
 
 set -eu -o pipefail
 
