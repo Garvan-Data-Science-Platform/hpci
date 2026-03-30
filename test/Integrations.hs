@@ -51,14 +51,6 @@ integrationSpec :: Spec
 integrationSpec = describe "Docker Integration Tests" $ do
   around (withContainers setupContainers) $ do
 
-    -- it "has the correct version of Slurm installed" $ \(slurm, _pbs) -> do
-    --   output <- runInContainer slurm ["sinfo", "--version"]
-    --   pack output `shouldSatisfy` ("slurm" `isInfixOf`)
-
-    -- it "has the correct version of PBS installed" $ \(_slurm, pbs) -> do
-    --   output <- runInContainer pbs ["pbsnodes", "--version"]
-    --   pack output `shouldSatisfy` ("version" `isInfixOf`)
-
     it "crashes when there is a slurm submission error" $ \(slurm, _pbs) -> do
       let port = show $ D.containerPort slurm 22
 
