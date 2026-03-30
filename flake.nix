@@ -93,19 +93,23 @@
       devShells =
         let
           devShellForSystem = system:
-            let pkgs = pkgsForSystem system;
+            let pkgs = nixpkgs.legacyPackages.${system};
                 haskellPackages = pkgs.haskell.packages.ghc98;
             in pkgs.mkShell {
               buildInputs = with haskellPackages; [
                 cabal-install
                 cabal2nix
-              ] ++ [ pkgs.zlib pkgs.entr pkgs.haskell-language-server ];
-              inputsFrom = builtins.attrValues self.packages.${system};
+              ] ++ [
+                pkgs.zlib
+                pkgs.entr
+                pkgs.haskell-language-server
+                pkgs.cachix
+              ];
             };
         in
         {
-          x86_64-linux = devShellForSystem "x86_64-linux";
-          aarch64-darwin = devShellForSystem "aarch64-darwin";
+          x86_64-linux =   { default = devShellForSystem "x86_64-linux";};
+          aarch64-darwin = { default = devShellForSystem "aarch64-darwin";};
         };
 
       defaultPackage.x86_64-linux = self.packages.x86_64-linux.hpci;
