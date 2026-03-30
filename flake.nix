@@ -18,7 +18,12 @@
           packageForSystem = system:
             let
               pkgs = pkgsForSystem system;
-              static_ssl = (pkgs.openssl.override { static = true; });
+              ssl_static = pkgs.openssl.override { static = true; };
+              ssh2_static = pkgs.libssh2.overrideAttrs (old: { dontDisableStatic = true; });
+              numa_static = pkgs.numactl.overrideAttrs (old: { dontDisableStatic = true; });
+              zstd_static = pkgs.zstd.override { static = true; };
+              xz_static = pkgs.xz.override { enableStatic = true; };
+              bz2_static = pkgs.bzip2.override { enableStatic = true; };
               haskellPackages = pkgs.haskell.packages.ghc98;
               packageName = "hpci";
               jailbreakUnbreak = pkg: pkgs.haskell.lib.doJailbreak (pkg.overrideAttrs (_: { meta = { }; }));
@@ -32,21 +37,51 @@
               doCheck = true;
               configureFlags = [
                 "--ghc-option=-optl=-static"
+
+                "--ghc-option=-optl=-L${ssh2_static}/lib"
+                "--ghc-option=-optl=-lssh2"
+                "--ghc-option=-optl=-L${ssl_static}/lib"
+                "--ghc-option=-optl=-lssl"
+                "--ghc-option=-optl=-lcrypto"
+
+                "--ghc-option=-optl=-L${pkgs.elfutils.dev}/lib"
+                "--ghc-option=-optl=-ldw"
+                "--ghc-option=-optl=-lelf"
+
+                "--ghc-option=-optl=-L${numa_static}/lib"
+                "--ghc-option=-optl=-lnuma"
+                "--ghc-option=-optl=-L${pkgs.zstd.dev}/lib"
+                "--ghc-option=-optl=-lzstd"
+                "--ghc-option=-optl=-L${pkgs.xz.dev}/lib"
+                "--ghc-option=-optl=-llzma"
+                "--ghc-option=-optl=-L${pkgs.bzip2.out}/lib"
+                "--ghc-option=-optl=-lbz2"
                 "--ghc-option=-optl=-L${pkgs.zlib.static}/lib"
                 "--ghc-option=-optl=-lz"
+
                 "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
                 "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
-                "--extra-lib-dirs=${pkgs.libssh2.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+                "--extra-lib-dirs=${ssh2_static}/lib"
                 "--extra-lib-dirs=${pkgs.pkg-config}/lib"
-                "--extra-lib-dirs=${static_ssl}/lib"
+                "--extra-lib-dirs=${ssl_static}/lib"
                 "--extra-lib-dirs=${pkgs.zlib.static}/lib"
+                "--extra-lib-dirs=${numa_static}/lib"
+                "--extra-lib-dirs=${pkgs.elfutils.dev}/lib"
+                "--extra-lib-dirs=${zstd_static}/lib"
+                "--extra-lib-dirs=${xz_static}/lib"
+                "--extra-lib-dirs=${bz2_static}/lib"
               ];
               buildDepends = [
                 pkgs.libffi
-                pkgs.libssh2
                 pkgs.pkg-config
-                static_ssl
+                ssh2_static
+                ssl_static
                 pkgs.zlib.static
+                numa_static
+                pkgs.elfutils
+                zstd_static
+                xz_static
+                bz2_static
               ];
             });
         in
