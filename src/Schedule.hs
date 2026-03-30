@@ -58,15 +58,23 @@ constructSubmissionCommand Slurm opts =
       (Script scriptPath) = script $ optCommand opts
   in "sbatch" <> configArg <> " " <> takeFileName scriptPath
 
-parseSubmissionResult :: Scheduler -> (Int, BSL.ByteString) -> Maybe Types.JobId
-parseSubmissionResult PBS tuple = do
-  -- PBS returns: "12345.pbs"
-  prefix <- listToMaybe $ BSL8.split '.' (snd tuple)
-  mkJobId $ BSL8.unpack prefix
-parseSubmissionResult Slurm tuple = do
-  -- Slurm returns: "Submitted batch job 12345"
-  jobIdStr <- listToMaybe . reverse . words . BSL8.unpack $ snd tuple
-  mkJobId jobIdStr
+parseSubmissionResult :: Scheduler -> (Int, BSL.ByteString) -> Either Text Types.JobId
+
+-- PBS returns: "12345.pbs"
+parseSubmissionResult PBS (exitCode, body)
+  | exitCode /= 0 = Left $ T.pack $ "Error" <> show exitCode <> ": " <> BSL8.unpack body
+  | otherwise =
+    case listToMaybe ( BSL8.split '.' body) of
+      Nothing     -> Left "Error: cannot parse Job ID."
+      Just prefix -> mkJobId $ BSL8.unpack prefix
+
+-- Slurm returns: "Submitted batch job 12345"
+parseSubmissionResult Slurm (exitCode, body)
+  | exitCode /= 0 = Left . T.pack $ "Error" <> show exitCode <> ": " <> BSL8.unpack body
+  | otherwise =
+    case listToMaybe ( reverse . words . BSL8.unpack $ body) of
+      Nothing       -> Left $ T.pack "Error: cannor parse Job ID."
+      Just jobIdStr -> mkJobId jobIdStr
 
 -- Define the different status queries
 data StatusType = JobState | JobExitCode
@@ -159,14 +167,15 @@ runSchedule opts = do
     --   Will use improved error handling instead
     submissionResult <- runCommand session (constructSubmissionCommand (scheduler cmdOpts) opts <> " 2>&1")
 
-    let maybeJobId = parseSubmissionResult (scheduler cmdOpts) submissionResult
+    let eitherJobId = parseSubmissionResult (scheduler cmdOpts) submissionResult
 
-    case maybeJobId of
-      Nothing -> do
-        putStrLn "Error: Could not parse a valid Job ID from the input."
+    case eitherJobId of
+      Left err -> do
+        putStrLn $ T.unpack err
         sessionClose session
+        exitWith (ExitFailure 1)
 
-      Just jobId -> do
+      Right jobId -> do
         putStrLn ("Job ID: " <> showJobId jobId)
         sessionClose session
 

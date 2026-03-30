@@ -14,8 +14,8 @@ instance Arbitrary JobId where
     len <- QC.choose (1, 20)
     digitString <- QC.vectorOf len (QC.elements ['0'..'9'])
     return $ case mkJobId digitString of
-      Just jid -> jid
-      Nothing  -> error "Test for JobId generated invalid data"
+      Left _ -> error "Test for JobId generated invalid data"
+      Right jid -> jid
 
 instance Arbitrary MalformedInput where
   arbitrary = do

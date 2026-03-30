@@ -1,6 +1,7 @@
 module Props where
 
 import qualified Data.ByteString.Lazy.Char8 as BSL8
+import Data.Either (isLeft)
 import Test.Tasty (TestTree)
 import Test.Tasty.QuickCheck as QC
 
@@ -19,8 +20,7 @@ prop_extractsJobId jobId =
   let
     parsedResult = parseSubmissionResult PBS (0, BSL8.pack (showJobId jobId <> ".pbs"))
   in
-  -- Change to be Right jobId
-    parsedResult == Just jobId
+    parsedResult == Right jobId
 
 prop_JobId_all_digits :: MalformedInput -> Bool
 prop_JobId_all_digits malformedInput =
@@ -29,8 +29,7 @@ prop_JobId_all_digits malformedInput =
 
     result = parseSubmissionResult PBS testInput
   in
-  -- Change to be Left with error message
-    result == Nothing
+    isLeft result 
 
 props :: [TestTree]
 props =
@@ -38,5 +37,3 @@ props =
     testProperty "Round trip test for parseSubmissionResult" prop_extractsJobId
   , testProperty "Correct rejects malformed JobId" prop_JobId_all_digits
   ]
-
-  -- ADD integration test with bad jobID and non-zero exit status code

@@ -1,6 +1,6 @@
 #! /bin/bash
 #SBATCH --job-name=testjob
-#SBATCH --account=NON_EXISTENT_ACCOUNT
+#SBATCH --partition=NON_EXISTENT_PARTITION
 
 set -eu -o pipefail
 

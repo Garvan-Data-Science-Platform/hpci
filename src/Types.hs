@@ -6,17 +6,17 @@ module Types (
 ) where
 
 import Text.Read
+import Data.Text (Text, pack)
 
 -- Custom type to represent a valid Job ID
 newtype JobId = JobId { getJobId :: Integer } deriving (Show, Eq)
 
-mkJobId :: String -> Maybe JobId
+mkJobId :: String -> Either Text JobId
 mkJobId s =
   case readMaybe s of
-    Nothing  -> Nothing
-    Just jobInt
-      | jobInt >= 0 -> Just (JobId jobInt)
-      | otherwise   -> Nothing
+    Just n | n >= 0 -> Right (JobId n)
+    Just _          -> Left $ pack "Job ID cannot be negative."
+    Nothing         -> Left $ pack ("Invalid Job ID: " ++ s)
 
 showJobId :: JobId -> String
 showJobId = show . getJobId
