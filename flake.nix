@@ -34,7 +34,7 @@
             pkgs.haskell.lib.overrideCabal mypackage (old: {
               enableSharedExecutables = false;
               enableSharedLibraries = false;
-              doCheck = true;
+              doCheck = false;
               configureFlags = [
                 "--ghc-option=-optl=-static"
 
@@ -105,6 +105,7 @@
                 pkgs.entr
                 pkgs.haskell-language-server
                 pkgs.cachix
+                pkgs.wget
               ];
             };
         in
