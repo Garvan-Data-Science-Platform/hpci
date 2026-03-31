@@ -28,7 +28,7 @@
               packageName = "hpci";
               jailbreakUnbreak = pkg: pkgs.haskell.lib.doJailbreak (pkg.overrideAttrs (_: { meta = { }; }));
               inherit (pkgs.haskell.lib) appendConfigureFlags justStaticExecutables;
-              mypackage = haskellPackages.callCabal2nix packageName self rec {
+              mypackage = haskellPackages.callPackage ./hpci.nix {
               };
             in
             pkgs.haskell.lib.overrideCabal mypackage (old: {
@@ -99,6 +99,7 @@
               buildInputs = with haskellPackages; [
                 cabal-install
                 cabal2nix
+                ghc
               ] ++ [
                 pkgs.zlib
                 pkgs.entr
