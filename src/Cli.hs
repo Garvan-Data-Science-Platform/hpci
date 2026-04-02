@@ -49,6 +49,7 @@ data Command
       scheduler      :: Scheduler,
       script         :: Script,
       logFile        :: LogFile,
+      schedulerArgs  :: [String],
       optConfig      :: KeyValuePairs }
   | Exec Text deriving Show
 
@@ -72,7 +73,12 @@ scheduleCommand =
 
 scheduleOptions :: Parser Command
 scheduleOptions =
-    Schedule <$> schedulerParser <*> scriptParser <*> logFileParser <*> (fromMaybe Map.empty <$> keyValuePairsOption)
+    Schedule
+      <$> schedulerParser
+      <*> scriptParser
+      <*> logFileParser
+      <*> schedulerArgsParser
+      <*> (fromMaybe Map.empty <$> keyValuePairsOption)
 
 execCommand :: Mod CommandFields Command
 execCommand =
@@ -112,6 +118,13 @@ scriptParser = Script <$> strOption (long "script")
 
 logFileParser :: Parser LogFile
 logFileParser = LogFile <$> strOption (long "logFile")
+
+schedulerArgsParser :: Parser [String]
+schedulerArgsParser = many $ strOption
+  ( long "scheduler-arg"
+  <> metavar "STRING"
+  <> help "Raw argument to append directly to the scheduler job submission command. Can be used multiple times."
+  )
 
 type KeyValuePairs = Map Text Text
 
