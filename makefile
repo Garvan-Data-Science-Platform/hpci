@@ -15,6 +15,8 @@ SCHEDULE_PBS_ARGS=--user pbsuser \
 			  schedule \
 			  --script ci/test_job.pbs \
 			  --logFile test_job.log \
+              --scheduler-arg "-q workq" \
+              --scheduler-arg "-N testjob" \
 			  -c TEST_VAR1=success,TEST_VAR2=double_success
 
 SCHEDULE_SLURM_ARGS=--user root \
@@ -26,6 +28,8 @@ SCHEDULE_SLURM_ARGS=--user root \
 			  --scheduler slurm \
 			  --script ci/test_job.slurm \
 			  --logFile test_job.log \
+              --scheduler-arg "--partition=all" \
+              --scheduler-arg "--job-name=testjob" \
 			  -c TEST_VAR1=success,TEST_VAR2=double_success
 
 EXEC_ARGS=--user pbsuser \

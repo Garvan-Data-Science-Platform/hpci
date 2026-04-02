@@ -44,25 +44,27 @@ mapToString = intercalate "," . fmap (\(k, v) -> T.unpack k <> "=" <> T.unpack v
 -- Construct the job submission command with options
 constructSubmissionCommand :: Scheduler -> Options -> String
 constructSubmissionCommand PBS opts =
-  let configString = mapToString (optConfig $ optCommand opts)
+  let schedulerArgString = unwords $ schedulerArgs $ optCommand opts
+      configString = mapToString (optConfig $ optCommand opts)
       configArg = if not (Map.null (optConfig $ optCommand opts))
                   then " -v " <> configString
                   else ""
       (Script scriptPath) = script $ optCommand opts
-  in "qsub" <> configArg <> " " <> takeFileName scriptPath
+  in unwords ["qsub", schedulerArgString, configArg, takeFileName scriptPath]
 constructSubmissionCommand Slurm opts =
-  let configString = mapToString (optConfig $ optCommand opts)
+  let schedulerArgString = unwords $ schedulerArgs $ optCommand opts
+      configString = mapToString (optConfig $ optCommand opts)
       configArg = if not (Map.null (optConfig $ optCommand opts))
                   then " --export=" <> configString
                   else ""
       (Script scriptPath) = script $ optCommand opts
-  in "sbatch" <> configArg <> " " <> takeFileName scriptPath
+  in unwords ["sbatch", schedulerArgString, configArg, takeFileName scriptPath]
 
 parseSubmissionResult :: Scheduler -> (Int, BSL.ByteString) -> Either Text Types.JobId
 
 -- PBS returns: "12345.pbs"
 parseSubmissionResult PBS (exitCode, body)
-  | exitCode /= 0 = Left $ T.pack $ "Error" <> show exitCode <> ": " <> BSL8.unpack body
+  | exitCode /= 0 = Left $ T.pack $ "Error with exit code: " <> show exitCode <> " " <> BSL8.unpack body
   | otherwise =
     case listToMaybe ( BSL8.split '.' body) of
       Nothing     -> Left "Error: cannot parse Job ID."
