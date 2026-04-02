@@ -44,7 +44,7 @@ runHpci inputArgs = readProcessWithExitCode "cabal" (["run", "hpci-exe", "--"] +
 
 integrationSpec :: Spec
 integrationSpec = describe "Docker Integration Tests" $ do
-  around (withContainers setupContainers) $ do
+  aroundAll (withContainers setupContainers) $ do
 
     -- it "succeeds for a normal slurm job" $ \(slurm, _pbs) -> do
     --   let port = show $ D.containerPort slurm 22

@@ -106,6 +106,8 @@
                 pkgs.haskell-language-server
                 pkgs.cachix
                 pkgs.wget
+                pkgs.openssl
+                pkgs.libssh2
               ];
             };
         in
