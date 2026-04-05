@@ -14,6 +14,7 @@ services:
     platform: linux/amd64
     volumes:
       - ./cgroup.conf:/etc/slurm/cgroup.conf
+      - ./slurm.conf:/etc/slurm/slurm.conf
       - ../test_key.pub:/tmp/authorized_keys:ro
     ports:
       - "2223:22"
