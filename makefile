@@ -16,8 +16,9 @@ SCHEDULE_PBS_ARGS=--user pbsuser \
 			  --script ci/test_job.pbs \
 			  --logFile test_job.log \
               --scheduler-arg "-q workq" \
-              --scheduler-arg "-N testjob" \
+              --scheduler-arg "-l 'walltime=01:30:00'" \
 			  -c TEST_VAR1=success,TEST_VAR2=double_success
+              # --scheduler-arg "-N testjob" \
 
 SCHEDULE_SLURM_ARGS=--user root \
 			  --host 127.0.0.1 \
@@ -29,8 +30,7 @@ SCHEDULE_SLURM_ARGS=--user root \
 			  --script ci/test_job.slurm \
 			  --logFile test_job.log \
               --scheduler-arg "--partition=all" \
-              --scheduler-arg "--job-name=testjob" \
-              --scheduler-arg "--begin=now+10" \
+              --scheduler-arg "--job-name='Build&Test'" \
 			  -c TEST_VAR1=success,TEST_VAR2=double_success
 
 EXEC_ARGS=--user pbsuser \
