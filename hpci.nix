@@ -1,6 +1,6 @@
 { mkDerivation, base, bytestring, containers, criterion, directory
 , filepath, hspec, lib, libssh2, mtl, optparse-applicative, process
-, retry, tasty, tasty-hspec, tasty-quickcheck, testcontainers, text
+, retry, tasty, tasty-hspec, tasty-quickcheck, text
 }:
 mkDerivation {
   pname = "hpci";
@@ -15,7 +15,7 @@ mkDerivation {
   executableHaskellDepends = [ base ];
   testHaskellDepends = [
     base bytestring directory filepath hspec process retry tasty
-    tasty-hspec tasty-quickcheck testcontainers text
+    tasty-hspec tasty-quickcheck text
   ];
   benchmarkHaskellDepends = [ base criterion ];
   license = lib.licenses.gpl3Plus;

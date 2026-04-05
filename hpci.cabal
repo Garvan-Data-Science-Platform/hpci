@@ -76,7 +76,6 @@ test-suite hpci-test
     , tasty-hspec >= 1.1.5
     , bytestring
     , retry
-    , testcontainers >= 0.5.2.0
     , text
     , process
     , directory
