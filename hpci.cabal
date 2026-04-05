@@ -42,7 +42,7 @@ library
     , mtl
     , bytestring
     , filepath
-    , libssh2
+    , libssh2 >= 0.2.0.9
     , optparse-applicative
     , text
     , retry

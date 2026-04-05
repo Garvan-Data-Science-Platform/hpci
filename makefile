@@ -30,6 +30,7 @@ SCHEDULE_SLURM_ARGS=--user root \
 			  --logFile test_job.log \
               --scheduler-arg "--partition=all" \
               --scheduler-arg "--job-name=testjob" \
+              --scheduler-arg "--begin=now+10" \
 			  -c TEST_VAR1=success,TEST_VAR2=double_success
 
 EXEC_ARGS=--user pbsuser \
@@ -116,7 +117,9 @@ DOCKER_TAG:=$(REGISTRY)$(IMAGE):latest
 .PHONY: docker
 ## Build a docker image. Only works on x86_64-linux. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah docker`).
 docker:
-	docker build -t $(DOCKER_TAG) -f Dockerfile ci
+	docker buildx build \
+		--platform linux/amd64,linux/arm64 \
+		-t $(DOCKER_TAG) -f ci/Dockerfile ci
 
 .PHONY: pull
 ## Pull a docker image from artifact registry (useful on non-x86_64 machines. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah pull`).

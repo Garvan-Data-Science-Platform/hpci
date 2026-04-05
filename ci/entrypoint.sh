@@ -5,10 +5,22 @@ hostname=$(hostname)
 
 # replace hostname in pbs.conf and mom_priv/config
 sed -i "s/PBS_SERVER=.*/PBS_SERVER=$hostname/" $pbs_conf_file
-sed -i "s/\$clienthost .*/\$clienthost $hostname/" $mom_conf_file
+
+# Safely append configurations to MOM
+echo "\$clienthost $hostname" >> $mom_conf_file
+echo '$usecp *:/home/ /home/' >> $mom_conf_file
+
+# disable SSH strict host key checking so background SCP doesn't hang
+printf "Host *\n    StrictHostKeyChecking no\n    UserKnownHostsFile /dev/null\n    LogLevel ERROR" >> /etc/ssh/ssh_config
 
 # start PBS Pro
 /etc/init.d/pbs start
+
+echo "Wating for PBS Server to start..."
+until qstat >/dev/null 2>&1; do
+  sleep 1
+done
+echo "PBS Server is up"
 
 # start ssh service
 /etc/init.d/ssh start
@@ -33,5 +45,9 @@ qmgr -c "set server scheduler_iteration = 20"
 qmgr -c "set server job_history_enable = True"
 qmgr -c "set server job_history_duration = 24:00:00"
 
+qmgr -c "set hook pbs_cgroups enabled = false"
+qmgr -c "set server resources_available.ncpus = 1"
+qmgr -c "set node pbs resources_available.ncpus = 1"
+
 # Start hanging process to leave the container up and running
-sleep infinity
+exec sleep infinity
