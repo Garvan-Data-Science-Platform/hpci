@@ -108,6 +108,10 @@
                 pkgs.wget
                 pkgs.openssl
                 pkgs.libssh2
+                pkgs.google-cloud-sdk
+                pkgs.pkg-config
+                pkgs.docker
+                pkgs.docker-compose
               ];
             };
         in

@@ -1,5 +1,5 @@
 # inspired by https://github.com/dask/dask-jobqueue/blob/main/ci/pbs/Dockerfile
-FROM debian:10.13-slim
+FROM debian:11-slim
 # install dependencies for building
 RUN apt-get update
 RUN apt-get -y install gcc make libtool libhwloc-dev libx11-dev \
@@ -26,7 +26,7 @@ RUN /opt/pbs/libexec/pbs_postinstall
 
 # install dependencies for running
 RUN apt-get install -y expat libedit2 postgresql python3 postgresql-contrib sendmail-bin \
-      sudo tcl tk libical3 libcjson1 openssh-server ed
+      sudo tcl tk libical3 libcjson1 openssh-server ed tini strace
 
 RUN sed -i 's/PBS_START_MOM=0/PBS_START_MOM=1/g' /etc/pbs.conf
 
@@ -44,4 +44,4 @@ RUN chmod a+x ./*.sh
 
 EXPOSE 22
 
-ENTRYPOINT ["bash", "/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
