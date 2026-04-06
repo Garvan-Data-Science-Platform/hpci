@@ -4,7 +4,7 @@
 }:
 mkDerivation {
   pname = "hpci";
-  version = "0.0.5";
+  version = "0.1.1";
   src = ./.;
   isLibrary = true;
   isExecutable = true;
