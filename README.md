@@ -42,6 +42,7 @@ chmod +x /usr/local/bin/hpci-exe
   schedule       *to schedule a job on HPC* 
   - --script     *local filepath of job scheduler script*
   - --logFile    *remote filepath of logfile produced by job scheduler script to copy back to local system*
+  - --scheduler-arg ***Optional*** *Arguments to be passed to the scheduler (can be repeated many times). Be mindful of escaping internal quotes. e.g. for PBS: --scheduler-arg "-q workq" --scheduler-arg "-l 'walltime=01:03:00'"; for Slurm: --scheduler-arg "--partition=all" --scheduler-arg "--job-name='Build&Test'"
   - -c           ***Optional*** *Configuration in the form of `KEY1=VALUE1,KEY2=VALUE2` that is passed to job scheduler when submitting the job*
 
 ## Security
