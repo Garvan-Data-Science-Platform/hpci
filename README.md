@@ -12,6 +12,14 @@ Then `hpci` will exit will the same exit status code as the job on HPC, therefor
 
 `hpci` is designed to be easily used with different CI platforms and different HPC clusters.
 
+**To learn about the motivation for `hpci` and to see different use cases within bioinformatics and computational biology, please read our pre-print: https://hal.science/hal-05613841**
+
+> Ignatius Jeppe Menzies, Eric Urng, George Bouras, Robert Moss, John Reeves, Leonard D Goldstein.
+>
+> hpci improves reproducibility of computational biology research by integrating Continuous Integration with High Performance Computing clusters.
+> 2026.
+> https://hal.science/hal-05613841v1
+
 ## How to use `hpci`
 
 1. Download `hpci` to your CI runner.
