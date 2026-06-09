@@ -8,7 +8,7 @@ module Schedule (
 -- Import from external libraries
 import Control.Concurrent
 import Data.List (intercalate)
-import Data.Maybe (listToMaybe)
+import Data.Maybe (listToMaybe, mapMaybe)
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.Text (Text)
@@ -16,6 +16,7 @@ import qualified Data.Text as T
 import qualified Data.Map.Strict as Map
 import System.Exit
 import System.FilePath
+import Text.Read (readMaybe)
 
 -- Import from FFI library
 import Network.SSH.Client.LibSSH2 (
@@ -86,7 +87,7 @@ getKey :: Scheduler -> StatusType -> String
 getKey PBS JobState       = "job_state"
 getKey PBS JobExitCode    = "Exit_status"
 getKey Slurm JobState     = "State"
-getKey Slurm JobExitCode  = "ExitCode"
+getKey Slurm JobExitCode  = "ExitCode,DerivedExitCode"
 
 -- Parses a field from typical `qstat -xf` response (example below)
 --
@@ -120,8 +121,15 @@ checkStatus PBS s jid statusType = do
     Left err    -> return $ Left err
 checkStatus Slurm s jid statusType = do
   jobStatus <- runCommand s ("sacct -j " <> showJobId jid <> " --format=" <> getKey Slurm statusType <> " --noheader -P -X")
-  let status = head $ T.split (==':') $ T.strip . T.pack . BSL8.unpack $ snd jobStatus
-  return $ Right status
+  let raw = T.strip . T.pack . BSL8.unpack $ snd jobStatus
+  case statusType of
+    JobState    -> return $ Right $ head $ T.split (== ':') raw
+    JobExitCode -> return $ Right $ maxExitCode raw
+
+maxExitCode :: T.Text -> T.Text
+maxExitCode raw =
+  let nums = mapMaybe (readMaybe . T.unpack) (T.split (`elem` (":|" :: String)) raw)
+  in T.pack . show $ maximum (0 : nums :: [Int])
 
 -- TODO: check if I need to also support short codes CA, CD, F, OOM, TO
 isFinished :: Scheduler -> Text -> Bool
