@@ -86,7 +86,7 @@ getKey :: Scheduler -> StatusType -> String
 getKey PBS JobState       = "job_state"
 getKey PBS JobExitCode    = "Exit_status"
 getKey Slurm JobState     = "State"
-getKey Slurm JobExitCode  = "DerivedExitCode"
+getKey Slurm JobExitCode  = "ExitCode"
 
 -- Parses a field from typical `qstat -xf` response (example below)
 --
