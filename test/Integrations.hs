@@ -64,8 +64,8 @@ integrationSpec = describe "Docker Integration Tests" $ do
 
       jobExitCode `shouldBe` ExitSuccess
 
-    it "crashes when there is a slurm submission error" $ \(slurm, _pbs) -> do
-      let cliArgs = [ "--user", targetPort slurm
+    it "crashes when there is a slurm submission error (wrong partition)" $ \(slurm, _pbs) -> do
+      let cliArgs = [ "--user", targetUser slurm
 			           , "--host", "127.0.0.1"
 			           , "--port", targetPort slurm
 			           , "--publicKey", "test_key.pub"
@@ -80,6 +80,23 @@ integrationSpec = describe "Docker Integration Tests" $ do
       (jobExitCode, _, _) <- runHpci cliArgs
 
       jobExitCode `shouldBe` ExitFailure 1
+
+    it "crashes when there is a slurm submission error (non-zero exit)" $ \(slurm, _pbs) -> do
+      let cliArgs = [ "--user", targetUser slurm
+			           , "--host", "127.0.0.1"
+			           , "--port", targetPort slurm
+			           , "--publicKey", "test_key.pub"
+			           , "--privateKey", "test_key"
+			           , "schedule"
+			           , "--scheduler", "slurm"
+			           , "--script", "ci/test_exit.slurm"
+			           , "--logFile", "test_job.log"
+			           , "-c", "TEST_VAR1=success,TEST_VAR2=double_success"
+                ]
+
+      (jobExitCode, _, _) <- runHpci cliArgs
+
+      jobExitCode `shouldBe` ExitFailure 7
 
     it "crashes when there is a pbs job submission error" $ \(_slurm, pbs) -> do
       let cliArgs = [ "--user", targetUser pbs
