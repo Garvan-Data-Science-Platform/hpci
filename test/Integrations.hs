@@ -98,7 +98,7 @@ integrationSpec = describe "Docker Integration Tests" $ do
 
       jobExitCode `shouldBe` ExitFailure 7
 
-    it "crashes when there is a pbs job submission error" $ \(_slurm, pbs) -> do
+    it "crashes when there is a pbs job submission error (wrong queue)" $ \(_slurm, pbs) -> do
       let cliArgs = [ "--user", targetUser pbs
 			           , "--host", "127.0.0.1"
 			           , "--port", targetPort pbs
@@ -114,6 +114,23 @@ integrationSpec = describe "Docker Integration Tests" $ do
       (jobExitCode, _, _) <- runHpci cliArgs
 
       jobExitCode `shouldBe` ExitFailure 1
+
+    it "crashes when there is a pbs job submission error (non-zero exit)" $ \(_slurm, pbs) -> do
+      let cliArgs = [ "--user", targetUser pbs
+			           , "--host", "127.0.0.1"
+			           , "--port", targetPort pbs
+			           , "--publicKey", "test_key.pub"
+			           , "--privateKey", "test_key"
+			           , "schedule"
+			           , "--scheduler", "pbs"
+			           , "--script", "ci/test_exit.pbs"
+			           , "--logFile", "test_job.log"
+			           , "-c", "TEST_VAR1=success,TEST_VAR2=double_success"
+                ]
+
+      (jobExitCode, _, _) <- runHpci cliArgs
+
+      jobExitCode `shouldBe` ExitFailure 7
 
     it "succeeds when a '--scheduler-arg' successfully overrides a slurm submission error" $ \(slurm, _pbs) -> do
       let cliArgs = [ "--user", targetUser slurm
