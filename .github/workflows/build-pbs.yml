@@ -6,16 +6,19 @@ on:
     branches:
       - dev
     paths:
-      - "ci/**"
+      - "ci/pbs/**"
       - ".github/workflows/build-pbs.yml"
   pull_request:
     paths:
-      - "ci/**"
+      - "ci/pbs/**"
       - ".github/workflows/build-pbs.yml"
   workflow_dispatch:
 
+env:
+  SCHEDULER: slurm
+
 jobs:
-  build-and-push-pbs-docker:
+  build-and-push-docker:
     permissions:
       contents: "read"
       packages: "write"
@@ -34,13 +37,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      # Use latest tag, as this is just for PBS used for testing
+      # Use latest tag, as this is just used for testing
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ci/
-          file: ci/Dockerfile
+          context: ci/${{ env.SCHEDULER }}
+          file: ci/${{ env.SCHEDULER }}/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ghcr.io/garvan-data-science-platform/pbs:latest
+          tags: ghcr.io/garvan-data-science-platform/${{ env.SCHEDULER }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
