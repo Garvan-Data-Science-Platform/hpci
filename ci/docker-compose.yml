@@ -1,20 +1,12 @@
 services:
   slurm:
-    # image: rocky8-slurm-hpci:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.slurm
-    # entrypoint: ["/usr/bin/tini", "--"]
-    # command:
-    #   - "/bin/sh"
-    #   - "-c"
-    #   - "/usr/local/bin/start-ssh.sh && exec /usr/local/sbin/entrypoint.sh tail -f /dev/null"
+    image: ghcr.io/garvan-data-science-platform/slurm:latest
     hostname: slurm
     container_name: slurm
     platform: linux/amd64
     volumes:
-      - ./cgroup.conf:/etc/slurm/cgroup.conf
-      - ./slurm.conf:/etc/slurm/slurm.conf
+      - ./slurm/cgroup.conf:/etc/slurm/cgroup.conf
+      - ./slurm/slurm.conf:/etc/slurm/slurm.conf
       - ../test_key.pub:/tmp/authorized_keys:ro
     ports:
       - "2223:22"
