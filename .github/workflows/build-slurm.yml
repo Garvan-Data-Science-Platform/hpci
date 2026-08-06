@@ -1,0 +1,49 @@
+name: Build and push PBS docker image
+
+# Only run if there have been changes to code in `ci` directory
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - "ci/slurm/**"
+      - ".github/workflows/build-slurm.yml"
+  pull_request:
+    paths:
+      - "ci/slurm/**"
+      - ".github/workflows/build-slurm.yml"
+  workflow_dispatch:
+
+env:
+  SCHEDULER: slurm
+
+jobs:
+  build-and-push-docker:
+    permissions:
+      contents: "read"
+      packages: "write"
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Docker auth
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Use latest tag, as this is just used for testing
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ci/${{ env.SCHEDULER }}
+          file: ci/${{ env.SCHEDULER }}/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ghcr.io/garvan-data-science-platform/${{ env.SCHEDULER }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
