@@ -48,10 +48,8 @@ The `makefile` has convenience commands for local testing.
 A summary of commands can be accessed using `make help`.
 
 For typical development and testing on an aarch64-darwin machine run:
-- ` gcloud auth login --project [GCP_PROJECT_NAME]`
-- ` gcloud auth configure-docker [GCP_REGION]-docker.pkg.dev/[GCP_PROJECT_NAME]/docker`
 - Make sure you have a container runtime like docker desktop or [colima](https://github.com/abiosoft/colima)
-- `make PROJECT=[GCP_PROJECT_NAME] pull` to pull docker image
+- `make pull` to pull docker image
 - `make up` to run OpenPBS and Slurm docker containers (uses Docker compose). There is also `make up-d` for running in detached mode.
 - use `docker logs -f pbs` to watch the logs and wait until the sshd server has been restarted.
 - In a seperate terminal run `ls */*.hs | entr make test` to recompile and run tests eachtime `hpci` haskell files are saved (requires installing [entr](https://github.com/eradman/entr))

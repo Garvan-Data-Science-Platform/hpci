@@ -109,38 +109,18 @@ build-darwin: ## Build dynamically-linked binary on aarch64-darwin
 # They are used to develop, build and push docker images used in CI for testing `hpci`
 # Also for pushing a binary to a cloud artifact registry
 
-REGION:=australia-southeast1
-REGISTRY:=$(REGION)-docker.pkg.dev/$(PROJECT)/docker/
+REGISTRY:=ghcr.io/garvan-data-science-platform/
 IMAGE:=pbs
 DOCKER_TAG:=$(REGISTRY)$(IMAGE):latest
 
 .PHONY: docker
-## Build a docker image. Only works on x86_64-linux. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah docker`).
+## Build a docker image. Only works on x86_64-linux.
 docker:
 	docker buildx build \
 		--platform linux/amd64,linux/arm64 \
 		-t $(DOCKER_TAG) -f ci/Dockerfile ci
 
 .PHONY: pull
-## Pull a docker image from artifact registry (useful on non-x86_64 machines. Provide PROJECT argument on commandline (e.g. `make PROJECT=blah pull`).
+## Pull a docker image from artifact registry (useful on non-x86_64 machines).
 pull:
 	docker pull --platform linux/amd64 $(DOCKER_TAG)
-
-.PHONY: push-bin
-## Push binary to gcp artifact registry - requires VERSION arg
-push-bin:
-	gcloud artifacts generic upload \
-		--location=australia-southeast1 \
-		--source=result/bin/hpci-exe \
-		--package=hpci \
-		--version=$(VERSION) \
-		--repository=generic
-
-.PHONY: delete-bin
-## Delete binary from gcp artifact registry - requires VERSION arg
-delete-bin:
-	gcloud artifacts versions delete $(VERSION)\
-		--location=australia-southeast1 \
-		--package=hpci \
-		--repository=generic
-
