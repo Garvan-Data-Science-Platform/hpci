@@ -43,7 +43,7 @@ jobs:
         with:
           context: ci/${{ env.SCHEDULER }}
           file: ci/${{ env.SCHEDULER }}/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          # push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/garvan-data-science-platform/${{ env.SCHEDULER }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
