@@ -1,4 +1,4 @@
-name: Build and push PBS docker image
+name: Build and push Slurm docker image
 
 # Only run if there have been changes to code in `ci` directory
 on:
