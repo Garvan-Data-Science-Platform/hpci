@@ -20,7 +20,7 @@ services:
       - "2223:22"
 
   pbs:
-    image: australia-southeast1-docker.pkg.dev/nci-automation/docker/pbs:latest
+    image: ghcr.io/garvan-data-science-platform/pbs:latest
     hostname: pbs
     container_name: pbs
     platform: linux/amd64
