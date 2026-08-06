@@ -48,12 +48,13 @@ The `makefile` has convenience commands for local testing.
 A summary of commands can be accessed using `make help`.
 
 For typical development and testing on an aarch64-darwin machine run:
-- Make sure you have a container runtime like docker desktop or [colima](https://github.com/abiosoft/colima)
-- `make pull` to pull docker image
+- Make sure you have a container runtime like docker desktop or [colima](https://github.com/abiosoft/colima)*.
 - `make up` to run OpenPBS and Slurm docker containers (uses Docker compose). There is also `make up-d` for running in detached mode.
-- use `docker logs -f pbs` to watch the logs and wait until the sshd server has been restarted.
 - In a seperate terminal run `ls */*.hs | entr make test` to recompile and run tests eachtime `hpci` haskell files are saved (requires installing [entr](https://github.com/eradman/entr))
 - You can also run the test suite each time a haskell file is saved by running `ls */*.hs | entr cabal test` in a separate terminal window
 - If you are on a x86_84-linux machine, then you can run `make test-bin` to test with the compiled binary
-- `make stop` to stop (and automatically remove) docker container when finished
+- `make down` to stop (and automatically remove) docker container when finished
+
+
+* Note: If you are on an M1 Mac, use colima and see a segfault in the Slurm docker logs, you may need to provision your container runtime with more memory and specific configuration (e.g. `colima start --cpu 4 --memory 8 --disk 100 --mount-type virtiofs --vm-type vz`)
 
