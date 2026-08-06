@@ -39,8 +39,8 @@ RUN rm -r /src/openpbs
 ENV PATH /opt/pbs/bin:$PATH
 
 # Copy entrypoint
-COPY ./*.sh /
-RUN chmod a+x ./*.sh
+COPY ./entrypoint.sh /
+RUN chmod a+x ./entrypoint.sh
 
 EXPOSE 22
 
