@@ -4,6 +4,7 @@ module Integrations (integrationSpec) where
 
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (pack)
+import Data.List (isInfixOf)
 import qualified Data.Text.Lazy as LazyText
 import System.Directory (makeAbsolute)
 import System.Exit (ExitCode(..))
@@ -85,3 +86,22 @@ integrationSpec = describe "Docker Integration Tests" $ do
       it "escapes tricky characters in pbs '--scheduler-arg'" $ \(_slurm, pbs) -> do
         let extra = ["--scheduler-arg", "-l 'walltime=01:30:00'"]
         baseScheduleArgs pbs "pbs" "ci/test_job.pbs" extra `shouldExitWith` ExitSuccess
+
+    context "SSH Error messages" $ do
+      it "prints a verbose FILE error when SSH keys are missing" $ \(slurm, _) -> do
+        let badKeyArgs =
+              [ "--user", targetUser slurm
+              , "--host", "127.0.0.1"
+              , "--port", targetPort slurm
+              , "--publicKey", "/tmp/does_not_exist.pub"
+              , "--privateKey", "/tmp/does_not_exist.key"
+              , "schedule"
+              , "--scheduler", "slurm"
+              , "--script", "ci/test_job.slurm"
+              , "--logFile", "test_job.log"
+              ]
+
+        (exitCode, stdout, stderr) <- runHpci badKeyArgs
+
+        exitCode `shouldNotBe` ExitSuccess
+        (stdout ++ stderr) `shouldSatisfy` ("Could not read your SSH keys" `isInfixOf`)
