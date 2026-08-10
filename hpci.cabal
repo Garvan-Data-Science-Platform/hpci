@@ -33,6 +33,7 @@ library
   hs-source-dirs:  src
   exposed-modules:
      Exec
+    , Errors
     , Cli
     , Helpers
     , Schedule
@@ -71,6 +72,7 @@ test-suite hpci-test
     , hpci
     , filepath
     , hspec
+    , libssh2 >= 0.2.0.9
     , tasty
     , tasty-quickcheck
     , tasty-hspec >= 1.1.5

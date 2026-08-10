@@ -10,6 +10,8 @@ import System.Directory (makeAbsolute)
 import System.Exit (ExitCode(..))
 import System.Process (readProcessWithExitCode)
 import Test.Hspec
+import Errors (renderSshError)
+import Network.SSH.Client.LibSSH2.Errors (ErrorCode(..))
 
 data SshTarget = SshTarget
   { targetPort :: String
@@ -104,4 +106,66 @@ integrationSpec = describe "Docker Integration Tests" $ do
         (exitCode, stdout, stderr) <- runHpci badKeyArgs
 
         exitCode `shouldNotBe` ExitSuccess
-        (stdout ++ stderr) `shouldSatisfy` ("Could not read your SSH keys" `isInfixOf`)
+        (stdout ++ stderr) `shouldSatisfy` (renderSshError FILE `isInfixOf`)
+
+      it "prints a verbose AUTHENTICATION_FAILED error when SSH keys are invalid" $ \(slurm, _) -> do
+        let badKeyArgs =
+              [ "--user", targetUser slurm
+              , "--host", "127.0.0.1"
+              , "--port", targetPort slurm
+              , "--publicKey", "ci/fake_key.pub" -- file exists but is not valid key
+              , "--privateKey", "ci/fake_key" -- file exists but is not valid key
+              , "schedule"
+              , "--scheduler", "slurm"
+              , "--script", "ci/test_job.slurm"
+              , "--logFile", "test_job.log"
+              ]
+
+        (exitCode, stdout, stderr) <- runHpci badKeyArgs
+
+        exitCode `shouldNotBe` ExitSuccess
+        (stdout ++ stderr) `shouldSatisfy` (renderSshError AUTHENTICATION_FAILED `isInfixOf`)
+
+      it "prints a verbose network error when port is incorrect" $ \(slurm, _) -> do
+        let badKeyArgs =
+              [ "--user", targetUser slurm
+              , "--host", "127.0.0.1"
+              , "--port", show (read (targetPort slurm) + 100 :: Int)
+              , "--publicKey", "ci/fake_key.pub" -- file exists but is not valid key
+              , "--privateKey", "ci/fake_key" -- file exists but is not valid key
+              , "schedule"
+              , "--scheduler", "slurm"
+              , "--script", "ci/test_job.slurm"
+              , "--logFile", "test_job.log"
+              ]
+
+        (exitCode, stdout, stderr) <- runHpci badKeyArgs
+
+        exitCode `shouldNotBe` ExitSuccess
+        (stdout ++ stderr) `shouldSatisfy` ("Could not establish a network connection" `isInfixOf`)
+        (stdout ++ stderr) `shouldSatisfy` ("Connection refused" `isInfixOf`)
+
+      -- it "prints a verbose network error when host is incorrect" $ \(slurm, _) -> do
+      --   let badKeyArgs =
+      --         [ "--user", targetUser slurm
+      --         , "--host", "127.0.0.2"
+      --         , "--port", targetPort slurm
+      --         , "--publicKey", "ci/fake_key.pub" -- file exists but is not valid key
+      --         , "--privateKey", "ci/fake_key" -- file exists but is not valid key
+      --         , "schedule"
+      --         , "--scheduler", "slurm"
+      --         , "--script", "ci/test_job.slurm"
+      --         , "--logFile", "test_job.log"
+      --         ]
+
+      --   (exitCode, stdout, stderr) <- runHpci badKeyArgs
+
+      --   exitCode `shouldNotBe` ExitSuccess
+      --   (stdout ++ stderr) `shouldSatisfy` ("Could not establish a network connection" `isInfixOf`)
+      --   (stdout ++ stderr) `shouldSatisfy` ("Connection refused" `isInfixOf`)
+
+-- user error
+-- host error
+-- scheduler
+-- logfile
+-- script
