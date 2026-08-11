@@ -2,11 +2,7 @@
 
 module Integrations (integrationSpec) where
 
-import Control.Monad.IO.Class (liftIO)
-import Data.Text (pack)
 import Data.List (isInfixOf)
-import qualified Data.Text.Lazy as LazyText
-import System.Directory (makeAbsolute)
 import System.Exit (ExitCode(..))
 import System.Process (readProcessWithExitCode)
 import Test.Hspec
@@ -140,7 +136,30 @@ integrationSpec = describe "Docker Integration Tests" $ do
         exitCode `shouldNotBe` ExitSuccess
         (stdout ++ stderr) `shouldSatisfy` ("Network connection timed" `isInfixOf`)
 
--- user error
--- scheduler
--- logfile
--- script
+      it "prints a verbose authentication error when user is incorrect" $ \(slurm, _) -> do
+        let baseArgs = baseScheduleArgs slurm "slurm" "ci/test_job.slurm" []
+
+        let badKeyArgs = replaceArg "--user" "wrongUser" baseArgs
+
+        (exitCode, stdout, stderr) <- runHpci badKeyArgs
+
+        exitCode `shouldNotBe` ExitSuccess
+        (stdout ++ stderr) `shouldSatisfy` (renderSshError AUTHENTICATION_FAILED `isInfixOf`)
+
+      it "prints a verbose error when logfile is missing on HPC" $ \(slurm, _) -> do
+        let baseArgs = baseScheduleArgs slurm "slurm" "ci/test_job.slurm" []
+
+        let badKeyArgs = replaceArg "--logFile" "fake_log.log" baseArgs
+
+        (exitCode, stdout, stderr) <- runHpci badKeyArgs
+
+        exitCode `shouldNotBe` ExitSuccess
+        (stdout ++ stderr) `shouldSatisfy` (renderSshError SCP_PROTOCOL `isInfixOf`)
+
+      it "prints a verbose error when script is missing on CI runner" $ \(slurm, _) -> do
+        let badKeyArgs = baseScheduleArgs slurm "slurm" "ci/fake_job.slurm" []
+
+        (exitCode, stdout, stderr) <- runHpci badKeyArgs
+
+        exitCode `shouldNotBe` ExitSuccess
+        (stdout ++ stderr) `shouldSatisfy` ("Local File Missing" `isInfixOf`)
