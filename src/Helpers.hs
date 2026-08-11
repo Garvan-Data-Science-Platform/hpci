@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
 module Helpers (
   scpSendFileRetry
@@ -10,13 +10,17 @@ module Helpers (
   , sessionRetry
 ) where
 
+import System.Timeout (timeout)
+import Control.Exception (throwIO, IOException)
+import Control.Monad.Catch (Handler(..))
+import Network.SSH.Client.LibSSH2.Errors(ErrorCode(..))
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Control.Retry (
   exponentialBackoff
   , limitRetries
-  , recoverAll
+  , recovering
   , RetryPolicy)
 
 import Network.SSH.Client.LibSSH2.Foreign (
@@ -76,14 +80,26 @@ defaultRetryPolicy = exponentialBackoff 1000000 <> limitRetries 5
 --   and IO MockSession in tests
 sessionRetry :: RetryPolicy -> IO a -> IO a
 sessionRetry policy actionToRetry =
-  recoverAll policy (\_ -> actionToRetry)
+  recovering policy handlers (\_ -> actionToRetry)
+  where
+    handlers =
+      [ \_ -> Handler $ \(err :: ErrorCode) -> return $ case err of
+        FILE                  -> False -- don't retry if there are errors with keys
+        AUTHENTICATION_FAILED -> False -- don't rety if there is an auth error
+        _                     -> True
+      , \_ -> Handler $ \(_ :: IOException) -> return False
+      ]
 
 connect :: Connection -> IO Session
 connect connInfo = do
-  s <- sessionInit' (host connInfo) (port connInfo)
-  publicKeyAuthFile' s (user connInfo) (publicKey connInfo) (privateKey connInfo)
-  putStrLn "SSH session established"
-  return s
+  mSession <- timeout 10000000 $ sessionInit' (host connInfo) (port connInfo)
+  case mSession of
+    Nothing ->
+      throwIO $ userError "Network connection timed out after 10 seconds"
+    Just s -> do
+      publicKeyAuthFile' s (user connInfo) (publicKey connInfo) (privateKey connInfo)
+      putStrLn "SSH session established"
+      return s
 
 -- add policy arg
 connectWithRetry :: Connection -> IO Session

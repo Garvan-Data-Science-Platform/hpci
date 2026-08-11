@@ -5,8 +5,8 @@ module Specs (retrySpec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 import Data.IORef
 import Control.Exception
-import Data.Typeable
 import Control.Retry
+import Network.SSH.Client.LibSSH2.Errors (ErrorCode(..))
 
 import Helpers (
   sessionRetry
@@ -15,9 +15,6 @@ import Helpers (
 -- Test retry functionality
 data MockSession = MockSession deriving (Show, Eq)
 
-data MockConnectionError = MockConnectionError deriving (Show, Typeable)
-instance Exception MockConnectionError
-
 mockConnect :: IORef Int -> IO MockSession
 mockConnect attemptCounter = do
   attempt <- readIORef attemptCounter
@@ -25,7 +22,7 @@ mockConnect attemptCounter = do
   putStrLn $ "Mock connection: trying attempt #" <> show (attempt + 1)
 
   if attempt < 2
-    then throwIO MockConnectionError
+    then throwIO TIMEOUT
     else return MockSession
 
 retrySpec :: RetryPolicy -> Spec

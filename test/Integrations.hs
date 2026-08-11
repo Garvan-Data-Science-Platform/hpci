@@ -145,24 +145,24 @@ integrationSpec = describe "Docker Integration Tests" $ do
         (stdout ++ stderr) `shouldSatisfy` ("Could not establish a network connection" `isInfixOf`)
         (stdout ++ stderr) `shouldSatisfy` ("Connection refused" `isInfixOf`)
 
-      -- it "prints a verbose network error when host is incorrect" $ \(slurm, _) -> do
-      --   let badKeyArgs =
-      --         [ "--user", targetUser slurm
-      --         , "--host", "127.0.0.2"
-      --         , "--port", targetPort slurm
-      --         , "--publicKey", "ci/fake_key.pub" -- file exists but is not valid key
-      --         , "--privateKey", "ci/fake_key" -- file exists but is not valid key
-      --         , "schedule"
-      --         , "--scheduler", "slurm"
-      --         , "--script", "ci/test_job.slurm"
-      --         , "--logFile", "test_job.log"
-      --         ]
+      it "prints a verbose network error when host is incorrect" $ \(slurm, _) -> do
+        let badKeyArgs =
+              [ "--user", targetUser slurm
+              , "--host", "127.0.0.2"
+              , "--port", targetPort slurm
+              , "--publicKey", "ci/fake_key.pub" -- file exists but is not valid key
+              , "--privateKey", "ci/fake_key" -- file exists but is not valid key
+              , "schedule"
+              , "--scheduler", "slurm"
+              , "--script", "ci/test_job.slurm"
+              , "--logFile", "test_job.log"
+              ]
 
-      --   (exitCode, stdout, stderr) <- runHpci badKeyArgs
+        (exitCode, stdout, stderr) <- runHpci badKeyArgs
 
-      --   exitCode `shouldNotBe` ExitSuccess
-      --   (stdout ++ stderr) `shouldSatisfy` ("Could not establish a network connection" `isInfixOf`)
-      --   (stdout ++ stderr) `shouldSatisfy` ("Connection refused" `isInfixOf`)
+        exitCode `shouldNotBe` ExitSuccess
+        (stdout ++ stderr) `shouldSatisfy` ("Network connection timed out" `isInfixOf`)
+        (stdout ++ stderr) `shouldSatisfy` ("timeout" `isInfixOf`)
 
 -- user error
 -- host error
