@@ -48,6 +48,7 @@ library
     , text
     , retry
     , exceptions
+    , directory
 
 executable hpci-exe
   import:         common-options

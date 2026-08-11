@@ -7,6 +7,8 @@ module Schedule (
 
 -- Import from external libraries
 import Control.Concurrent
+import Control.Monad (when)
+import Control.Exception (throwIO)
 import Data.List (intercalate)
 import Data.Maybe (listToMaybe, mapMaybe)
 import qualified Data.ByteString.Lazy as BSL
@@ -14,9 +16,12 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Map.Strict as Map
+import System.Directory (getFileSize)
 import System.Exit
 import System.FilePath
 import Text.Read (readMaybe)
+
+import Errors (HpciUserError(..))
 
 -- Import from FFI library
 import Network.SSH.Client.LibSSH2 (
@@ -156,11 +161,16 @@ pollUntilFinished schedulerType connInfo jid interval = do
           threadDelay interval
           pollUntilFinished schedulerType connInfo jid interval
 
--- TODO: error handling for IO and parsing status of job
 runSchedule :: Options -> IO()
 runSchedule opts = do
     let connInfo                  = connectionInfo opts
         cmdOpts                   = optCommand opts
+        (Script scriptPath)       = script cmdOpts
+
+    -- Check script is not empty
+    size <- getFileSize scriptPath
+    when (size == 0) $
+      throwIO $ LocalFileError $ "The script file '" ++ scriptPath ++ "' is empty (0 bytes)."
 
     session <- connectWithRetry connInfo
 
@@ -168,13 +178,10 @@ runSchedule opts = do
     scriptSize <- scpSendFileRetry defaultRetryPolicy session (script cmdOpts)
 
     putStrLn $ "Sent: " <> show (script cmdOpts) <> " - " <> show scriptSize <> " bytes."
-    -- TODO add zero script size check
 
     -- Submit job using script file
     putStrLn $ "Command to run on server: " <> constructSubmissionCommand (scheduler cmdOpts) opts
 
-    -- Note: Add retry? I'm torn. I don't want to accidentally schedule multiple concurrent jobs.
-    --   Will use improved error handling instead
     submissionResult <- runCommand session (constructSubmissionCommand (scheduler cmdOpts) opts <> " 2>&1")
 
     let eitherJobId = parseSubmissionResult (scheduler cmdOpts) submissionResult
@@ -190,7 +197,6 @@ runSchedule opts = do
         sessionClose session
 
         -- Query job status
-        -- TODO: Add timeout?
         -- TODO: add user defined poll interval with default
         pollUntilFinished (scheduler cmdOpts) connInfo jobId 20000000
 
