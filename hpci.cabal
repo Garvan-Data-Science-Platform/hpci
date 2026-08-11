@@ -47,6 +47,7 @@ library
     , optparse-applicative
     , text
     , retry
+    , exceptions
 
 executable hpci-exe
   import:         common-options
