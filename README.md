@@ -18,16 +18,17 @@ Then `hpci` will exit will the same exit status code as the job on HPC, therefor
 >
 > hpci improves reproducibility of computational biology research by integrating Continuous Integration with High Performance Computing clusters.
 > 2026.
-> https://hal.science/hal-05613841v1
+> https://hal.science/hal-05613841
 
 ## How to use `hpci`
 
 1. Download `hpci` to your CI runner.
 You can either add `hpci` to your deployed runner vm, or include a download step as part of your CI workflow.
 You can also download it locally for testing, but it is intended to be used on CI runner.
+*Note: the command below includes a specific release version.*
+*Check [the release page](https://github.com/Garvan-Data-Science-Platform/hpci/releases) to see the latest version.*
 
 ```
-  # Note: this command includes a specific release version. Check [the release page](https://github.com/Garvan-Data-Science-Platform/hpci/releases) to see the latest version.
   wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/download/v0.1.4/hpci-exe
 ```
 
