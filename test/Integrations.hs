@@ -104,17 +104,29 @@ integrationSpec = describe "Docker Integration Tests" $ do
         exitCode `shouldNotBe` ExitSuccess
         (stdout ++ stderr) `shouldSatisfy` (renderSshError FILE `isInfixOf`)
 
-      it "prints a verbose AUTHENTICATION_FAILED error when SSH keys are invalid" $ \(slurm, _) -> do
+      it "prints a verbose AUTHENTICATION_FAILED error when public SSH key is invalid" $ \(slurm, _) -> do
         let baseArgs = baseScheduleArgs slurm "slurm" "ci/test_job.slurm" []
 
         -- key file exists but is not the correct key
-        let badKeyArgs = replaceArg "--publicKey" "ci/fake_key.pub" $ replaceArg "--privateKey" "ci/fake_key" baseArgs
+        let badKeyArgs = replaceArg "--publicKey" "ci/fake_key.pub" baseArgs
 
         (exitCode, stdout, stderr) <- runHpci badKeyArgs
 
         exitCode `shouldNotBe` ExitSuccess
         (stdout ++ stderr) `shouldSatisfy` (renderSshError AUTHENTICATION_FAILED `isInfixOf`)
 
+      it "prints a verbose PUBLICKEY_UNVERIFIED error when SSH private key is invalid" $ \(slurm, _) -> do
+        let baseArgs = baseScheduleArgs slurm "slurm" "ci/test_job.slurm" []
+
+        -- key file exists but is not the correct key
+        let badKeyArgs = replaceArg "--privateKey" "ci/fake_key" baseArgs
+
+        (exitCode, stdout, stderr) <- runHpci badKeyArgs
+
+        exitCode `shouldNotBe` ExitSuccess
+        (stdout ++ stderr) `shouldSatisfy` (renderSshError PUBLICKEY_UNVERIFIED `isInfixOf`)
+
+    context "Network Error messages" $ do
       it "prints a verbose network error when port is incorrect" $ \(slurm, _) -> do
         let baseArgs = baseScheduleArgs slurm "slurm" "ci/test_job.slurm" []
 

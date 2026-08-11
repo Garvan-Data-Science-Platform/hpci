@@ -43,6 +43,10 @@ renderSshError err = case err of
     "The HPC rejected your login attempt.\n" ++
     "Fix: ensure your username is correct and that your public ssh key is in the login node's authorized_keys file."
 
+  PUBLICKEY_UNVERIFIED ->
+    "The HPC rejected your private key signature\n" ++
+    "Fix: ensure your --privateKey file is correct."
+
   TIMEOUT ->
     "The connection to the HPC timed out.\n" ++
     "Fix: Check the cluster network connection."
