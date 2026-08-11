@@ -27,7 +27,8 @@ You can either add `hpci` to your deployed runner vm, or include a download step
 You can also download it locally for testing, but it is intended to be used on CI runner.
 
 ```
-  wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/download/v0.0.5/hpci-exe
+  # Note: this command includes a specific release version. Check [the release page](https://github.com/Garvan-Data-Science-Platform/hpci/releases) to see the latest version.
+  wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/download/v0.1.4/hpci-exe
 ```
 
 Either add the binary to your path, or download to a specific location by using wget with `--directory-prefix=`.
