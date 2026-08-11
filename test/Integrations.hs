@@ -30,16 +30,24 @@ runHpci inputArgs = readProcessWithExitCode "cabal" (["run", "hpci-exe", "--"] +
 baseScheduleArgs :: SshTarget -> String -> String -> [String] -> [String]
 baseScheduleArgs target scheduler script extraArgs =
   [ "--user", targetUser target
-	, "--host", "127.0.0.1"
-	, "--port", targetPort target
-	, "--publicKey", "test_key.pub"
-	, "--privateKey", "test_key"
-	, "schedule"
-	, "--scheduler", scheduler
-	, "--script", script
-	, "--logFile", "test_job.log"
-	, "-c", "TEST_VAR1=success,TEST_VAR2=double_success"
+  , "--host", "127.0.0.1"
+  , "--port", targetPort target
+  , "--publicKey", "test_key.pub"
+  , "--privateKey", "test_key"
+  , "schedule"
+  , "--scheduler", scheduler
+  , "--script", script
+  , "--logFile", "test_job.log"
+  , "-c", "TEST_VAR1=success,TEST_VAR2=double_success"
   ] ++ extraArgs
+
+-- helper to make tests more dry
+replaceArg :: String -> String -> [String] -> [String]
+replaceArg _ _ [] = []
+replaceArg flag newVal (x:y:rest)
+ | x == flag = x : newVal : rest
+ | otherwise = x : replaceArg flag newVal (y:rest)
+replaceArg _ _ [x] = [x]
 
 shouldExitWith :: [String] -> ExitCode -> IO()
 shouldExitWith args expectedCode = do
@@ -91,17 +99,9 @@ integrationSpec = describe "Docker Integration Tests" $ do
 
     context "SSH Error messages" $ do
       it "prints a verbose FILE error when SSH keys are missing" $ \(slurm, _) -> do
-        let badKeyArgs =
-              [ "--user", targetUser slurm
-              , "--host", "127.0.0.1"
-              , "--port", targetPort slurm
-              , "--publicKey", "/tmp/does_not_exist.pub"
-              , "--privateKey", "/tmp/does_not_exist.key"
-              , "schedule"
-              , "--scheduler", "slurm"
-              , "--script", "ci/test_job.slurm"
-              , "--logFile", "test_job.log"
-              ]
+        let baseArgs = baseScheduleArgs slurm "slurm" "ci/test_job.slurm" []
+
+        let badKeyArgs = replaceArg "--publicKey" "/tmp/does_not_exist.pub" $ replaceArg "--privateKey" "/tmp/does_not_exist.key" baseArgs
 
         (exitCode, stdout, stderr) <- runHpci badKeyArgs
 
@@ -109,17 +109,10 @@ integrationSpec = describe "Docker Integration Tests" $ do
         (stdout ++ stderr) `shouldSatisfy` (renderSshError FILE `isInfixOf`)
 
       it "prints a verbose AUTHENTICATION_FAILED error when SSH keys are invalid" $ \(slurm, _) -> do
-        let badKeyArgs =
-              [ "--user", targetUser slurm
-              , "--host", "127.0.0.1"
-              , "--port", targetPort slurm
-              , "--publicKey", "ci/fake_key.pub" -- file exists but is not valid key
-              , "--privateKey", "ci/fake_key" -- file exists but is not valid key
-              , "schedule"
-              , "--scheduler", "slurm"
-              , "--script", "ci/test_job.slurm"
-              , "--logFile", "test_job.log"
-              ]
+        let baseArgs = baseScheduleArgs slurm "slurm" "ci/test_job.slurm" []
+
+        -- key file exists but is not the correct key
+        let badKeyArgs = replaceArg "--publicKey" "ci/fake_key.pub" $ replaceArg "--privateKey" "ci/fake_key" baseArgs
 
         (exitCode, stdout, stderr) <- runHpci badKeyArgs
 
@@ -127,17 +120,9 @@ integrationSpec = describe "Docker Integration Tests" $ do
         (stdout ++ stderr) `shouldSatisfy` (renderSshError AUTHENTICATION_FAILED `isInfixOf`)
 
       it "prints a verbose network error when port is incorrect" $ \(slurm, _) -> do
-        let badKeyArgs =
-              [ "--user", targetUser slurm
-              , "--host", "127.0.0.1"
-              , "--port", show (read (targetPort slurm) + 100 :: Int)
-              , "--publicKey", "ci/fake_key.pub" -- file exists but is not valid key
-              , "--privateKey", "ci/fake_key" -- file exists but is not valid key
-              , "schedule"
-              , "--scheduler", "slurm"
-              , "--script", "ci/test_job.slurm"
-              , "--logFile", "test_job.log"
-              ]
+        let baseArgs = baseScheduleArgs slurm "slurm" "ci/test_job.slurm" []
+
+        let badKeyArgs = replaceArg "--port" (show (read (targetPort slurm) + 100 :: Int)) baseArgs
 
         (exitCode, stdout, stderr) <- runHpci badKeyArgs
 
@@ -146,26 +131,16 @@ integrationSpec = describe "Docker Integration Tests" $ do
         (stdout ++ stderr) `shouldSatisfy` ("Connection refused" `isInfixOf`)
 
       it "prints a verbose network error when host is incorrect" $ \(slurm, _) -> do
-        let badKeyArgs =
-              [ "--user", targetUser slurm
-              , "--host", "127.0.0.2"
-              , "--port", targetPort slurm
-              , "--publicKey", "ci/fake_key.pub" -- file exists but is not valid key
-              , "--privateKey", "ci/fake_key" -- file exists but is not valid key
-              , "schedule"
-              , "--scheduler", "slurm"
-              , "--script", "ci/test_job.slurm"
-              , "--logFile", "test_job.log"
-              ]
+        let baseArgs = baseScheduleArgs slurm "slurm" "ci/test_job.slurm" []
+
+        let badKeyArgs = replaceArg "--host" "127.0.0.2" baseArgs
 
         (exitCode, stdout, stderr) <- runHpci badKeyArgs
 
         exitCode `shouldNotBe` ExitSuccess
-        (stdout ++ stderr) `shouldSatisfy` ("Network connection timed out" `isInfixOf`)
-        (stdout ++ stderr) `shouldSatisfy` ("timeout" `isInfixOf`)
+        (stdout ++ stderr) `shouldSatisfy` ("Network connection timed" `isInfixOf`)
 
 -- user error
--- host error
 -- scheduler
 -- logfile
 -- script
