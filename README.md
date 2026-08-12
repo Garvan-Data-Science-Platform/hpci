@@ -25,11 +25,13 @@ Then `hpci` will exit will the same exit status code as the job on HPC, therefor
 1. Download `hpci` to your CI runner.
 You can either add `hpci` to your deployed runner vm, or include a download step as part of your CI workflow.
 You can also download it locally for testing, but it is intended to be used on CI runner.
-*Note: the command below includes a specific release version.*
-*Check [the release page](https://github.com/Garvan-Data-Science-Platform/hpci/releases) to see the latest version.*
 
 ```
-  wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/download/v0.1.4/hpci-exe
+# Download the most recent release of hpci
+wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/latest/download/hpci-exe
+
+# Or download a specific release version
+wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/download/v0.1.4/hpci-exe
 ```
 
 Either add the binary to your path, or download to a specific location by using wget with `--directory-prefix=`.

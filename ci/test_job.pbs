@@ -3,9 +3,10 @@
 #PBS -S /bin/bash
 #PBS -q workq
 #PBS -j oe
+#PBS -o test_job.log
 
 set -eu -o pipefail
 
 QSTAT_VERSION=$(/opt/pbs/bin/qstat --version)
 
-echo "Qstat version: $QSTAT_VERSION" > test_job.log 2>&1
+echo "Qstat version: $QSTAT_VERSION"
