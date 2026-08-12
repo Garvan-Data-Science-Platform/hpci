@@ -1,0 +1,29 @@
+image: busybox:latest
+
+stages:
+  - test
+
+download-hpci:
+  stage: test
+  script:
+    - wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/latest/download/hpci-exe
+    - chmod +x ./hpci-exe
+    - ./hpci-exe --help
+    - echo "$KEY" | base64 -d > hpci-key
+    - echo "$PUB" | base64 -d > hpci-key.pub
+    - chmod 400 hpci-key*
+    - >
+      ./hpci-exe
+      --user $HPC_USER
+      --host $HPC_HOST
+      --port 22
+      --publicKey hpci-key.pub
+      --privateKey hpci-key
+      schedule
+      --scheduler slurm
+      --script hpci-example-job.slurm
+      --logFile hpci-example-job.log
+      -c COMMIT_SHA=$CI_COMMIT_SHA,REPO_URL=$CI_REPOSITORY_URL,REPO_NAME=$CI_PROJECT_NAME
+
+after_script:
+  - rm -f ./hpci-exe hpci-key hpci-key.pub
