@@ -1,0 +1,39 @@
+name: HPC Example
+on: [push, workflow_dispatch]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download, Setup, and Run hpci
+        env:
+          KEY: ${{ secrets.PRIVATE_KEY }}
+          PUB: ${{ secrets.PUBLIC_KEY }}
+          HPC_USER: ${{ secrets.HPC_USER }}
+          HPC_HOST: ${{ secrets.HPC_HOST }}
+        run: |
+          wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/latest/download/hpci-exe
+          chmod +x ./hpci-exe
+          ./hpci-exe --help
+
+          printf "%s\n" "$KEY" > hpci-key
+          printf "%s\n" "$PUB" > hpci-key.pub
+          chmod 400 hpci-key*
+
+          ./hpci-exe \
+            --user "$HPC_USER" \
+            --host "$HPC_HOST" \
+            --port 22 \
+            --publicKey hpci-key.pub \
+            --privateKey hpci-key \
+            schedule \
+            --scheduler pbs \
+            --script hpci-example-job.pbs \
+            --logFile hpci-example-job.log \
+            -c COMMIT_SHA=${{ github.sha }},REPO_URL=https://github.com/${{ github.repository }}.git,REPO_NAME=${{ github.event.repository.name }}
+
+      - name: Cleanup keys and binary
+        if: always()
+        run: rm -f ./hpci-exe hpci-key hpci-key.pub

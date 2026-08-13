@@ -14,8 +14,8 @@ download-hpci:
     - chmod 400 hpci-key*
     - >
       ./hpci-exe
-      --user $HPC_USER
-      --host $HPC_HOST
+      --user "$HPC_USER"
+      --host "$HPC_HOST"
       --port 22
       --publicKey hpci-key.pub
       --privateKey hpci-key
@@ -25,5 +25,5 @@ download-hpci:
       --logFile hpci-example-job.log
       -c COMMIT_SHA=$CI_COMMIT_SHA,REPO_URL=$CI_REPOSITORY_URL,REPO_NAME=$CI_PROJECT_NAME
 
-after_script:
-  - rm -f ./hpci-exe hpci-key hpci-key.pub
+  after_script:
+    - rm -f ./hpci-exe hpci-key hpci-key.pub
