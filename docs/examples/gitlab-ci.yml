@@ -9,8 +9,8 @@ download-hpci:
     - wget https://github.com/Garvan-Data-Science-Platform/hpci/releases/latest/download/hpci-exe
     - chmod +x ./hpci-exe
     - ./hpci-exe --help
-    - echo "$KEY" | base64 -d > hpci-key
-    - echo "$PUB" | base64 -d > hpci-key.pub
+    - echo "$PRIVATE_KEY" | base64 -d > hpci-key
+    - echo "$PUBLIC_KEY" | base64 -d > hpci-key.pub
     - chmod 400 hpci-key*
     - >
       ./hpci-exe

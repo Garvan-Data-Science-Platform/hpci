@@ -57,6 +57,8 @@ chmod +x /usr/local/bin/hpci-exe
   - --scheduler-arg ***Optional*** *Arguments to be passed to the scheduler (can be repeated many times). Be mindful of escaping internal quotes. e.g. for PBS: --scheduler-arg "-q workq" --scheduler-arg "-l 'walltime=01:03:00'"; for Slurm: --scheduler-arg "--partition=all" --scheduler-arg "--job-name='Build&Test'"
   - -c           ***Optional*** *Configuration in the form of `KEY1=VALUE1,KEY2=VALUE2` that is passed to job scheduler when submitting the job*
 
+The `docs/examples` directory contains example CI workflow scripts for GitHub Actions and GitLab CI, as well as example job submission scripts for Slurm and PBS schedulers.
+
 ## Security
 
 I recommend creating an ssh key specifically for use with `hpci` so you can easily revoke access, and cycle keys.
