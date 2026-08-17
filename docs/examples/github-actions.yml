@@ -9,8 +9,8 @@ jobs:
 
       - name: Download, Setup, and Run hpci
         env:
-          KEY: ${{ secrets.PRIVATE_KEY }}
-          PUB: ${{ secrets.PUBLIC_KEY }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PUBLIC_KEY: ${{ secrets.PUBLIC_KEY }}
           HPC_USER: ${{ secrets.HPC_USER }}
           HPC_HOST: ${{ secrets.HPC_HOST }}
         run: |
@@ -18,8 +18,8 @@ jobs:
           chmod +x ./hpci-exe
           ./hpci-exe --help
 
-          printf "%s\n" "$KEY" > hpci-key
-          printf "%s\n" "$PUB" > hpci-key.pub
+          printf "%s\n" "$PRIVATE_KEY" > hpci-key
+          printf "%s\n" "$PUBLIC_KEY" > hpci-key.pub
           chmod 400 hpci-key*
 
           ./hpci-exe \
